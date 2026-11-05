@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>행사 관리 · 봉불사</title>
+<style>
+  :root {
+    --bg: #faf6ef;
+    --panel: #ffffff;
+    --side: #3b2a20;
+    --side-text: #e9dccb;
+    --accent: #c8862a;
+    --text: #2b2118;
+    --muted: #7a6a5b;
+    --line: #e6dccd;
+    --ok-bg: #e4f1e1; --ok-fg: #2f6b2a;
+    --off-bg: #eee8df; --off-fg: #6b5d4f;
+    --red: #c62828; --red-bg: #fde8e6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+  }
+
+  /* 위쪽 띠 (index.html 의 왼쪽 메뉴와 같은 색) */
+  .bar {
+    background: var(--side); color: var(--side-text);
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    padding: 14px 32px;
+  }
+  .bar .name { font-size: 20px; font-weight: 700; color: #fff; }
+  .bar .sub { font-size: 13px; color: #c9b7a2; }
+  .bar .sp { flex: 1; }
+  .bar a, .bar button.link {
+    color: inherit; text-decoration: none; font: inherit; font-size: 15px;
+    background: none; border: 0; padding: 8px 12px; border-radius: 10px; cursor: pointer;
+  }
+  .bar a:hover, .bar button.link:hover { background: rgba(255,255,255,.08); }
+
+  header.page { padding: 22px 32px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header.page h1 { margin: 0; font-size: 22px; }
+  .admin-tag { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #f3e6cf; color: #8a5a12; }
+
+  main { padding: 28px 32px 48px; max-width: 880px; }
+  h2 { font-size: 20px; margin: 28px 0 12px; }
+
+  .tabs { display: flex; gap: 6px; margin-bottom: 20px; }
+  .tabs button {
+    font: inherit; padding: 10px 18px; border-radius: 10px; cursor: pointer;
+    border: 1px solid var(--line); background: var(--panel); color: var(--text);
+  }
+  .tabs button[aria-pressed="true"] { background: var(--side); color: #fff; border-color: var(--side); font-weight: 700; }
+
+  .list { display: grid; gap: 14px; }
+  .item { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 10px; }
+  .item.past { opacity: .65; }
+  .item.urgent { border-color: var(--red); border-left-width: 6px; }
+  .top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .title { font-size: 18px; font-weight: 700; margin: 0; }
+  .badge { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; }
+  .badge.open { background: var(--ok-bg); color: var(--ok-fg); }
+  .badge.closed, .badge.canceled { background: var(--off-bg); color: var(--off-fg); }
+  .badge.dday { background: var(--off-bg); color: var(--off-fg); }
+  .badge.dday.urgent { background: var(--red); color: #fff; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 18px; color: var(--muted); font-size: 15px; }
+  .meta .urgent { color: var(--red); font-weight: 700; }
+  .desc { margin: 0; line-height: 1.6; white-space: pre-line; }
+
+  .btn { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(.95); }
+  .btn.ghost { background: var(--panel); color: var(--text); border: 1px solid var(--line); font-weight: 400; }
+  .btn.small { padding: 7px 14px; font-size: 14px; }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn:focus-visible, .tabs button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  form.box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; }
+  form.box.edit { border-color: var(--accent); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  label.f { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+  label.f.wide { grid-column: 1 / -1; }
+  input, select, textarea {
+    font: inherit; color: var(--text); background: #fff;
+    border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%;
+  }
+  textarea { min-height: 84px; resize: vertical; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .msg { font-size: 14px; min-height: 1.2em; }
+  .msg.err { color: var(--red); }
+  .msg.ok { color: var(--ok-fg); }
+
+  .state { padding: 40px 0; text-align: center; color: var(--muted); }
+  .hint { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+
+  @media (max-width: 720px) {
+    .bar, header.page { padding-left: 16px; padding-right: 16px; }
+    main { padding: 20px 16px 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div><div class="name">🪷 봉불사</div><div class="sub">성지순례 봉찬회</div></div>
+  <div class="sp"></div>
+  <a href="index.html">홈으로</a>
+  <button class="link" id="auth-btn" type="button">관리자 로그인</button>
+</div>
+
+<header class="page">
+  <h1>행사 관리</h1>
+  <span class="admin-tag" id="admin-tag" hidden>관리자 모드</span>
+</header>
+
+<main>
+  <div class="tabs" role="group" aria-label="종류">
+    <button type="button" data-tab="pilgrimages" aria-pressed="true">성지순례</button>
+    <button type="button" data-tab="events" aria-pressed="false">행사</button>
+  </div>
+
+  <div id="login-slot"></div>
+  <div id="add-slot"></div>
+  <p class="hint" id="hint">마감까지 5일 이하로 남은 일정은 <b style="color:var(--red)">빨간색</b>으로 표시됩니다.</p>
+  <div id="list"><div class="state">불러오는 중…</div></div>
+</main>
+
+<script>
+  // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 쓰기 권한은 DB의 RLS 규칙(로그인한 관리인만)이 정합니다.
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+  const URGENT_DAYS = 5; // D-5 이하는 빨간색
+
+  const STATUS = { open: '모집중', closed: '마감', canceled: '취소' };
+  const STATUS_OPTS = Object.entries(STATUS).map(([value, label]) => ({ value, label }));
+
+  // 탭별 테이블·입력 항목
+  const CONFIG = {
+    pilgrimages: {
+      label: '성지순례', table: 'pilgrimages', dateKey: 'trip_date',
+      fields: [
+        { key: 'title', label: '제목', type: 'text', required: true },
+        { key: 'trip_date', label: '날짜', type: 'date', required: true },
+        { key: 'place', label: '장소', type: 'text', required: true },
+        { key: 'price', label: '금액(원)', type: 'number', min: 0 },
+        { key: 'capacity', label: '정원(명)', type: 'number', min: 1 },
+        { key: 'status', label: '상태', type: 'select', options: STATUS_OPTS, def: 'open' },
+        { key: 'description', label: '설명', type: 'textarea', wide: true },
+      ],
+    },
+    events: {
+      label: '행사', table: 'events', dateKey: 'event_date',
+      fields: [
+        { key: 'title', label: '행사명', type: 'text', required: true },
+        { key: 'event_date', label: '날짜', type: 'date', required: true },
+        { key: 'place', label: '장소', type: 'text' },
+        { key: 'description', label: '설명', type: 'textarea', wide: true },
+      ],
+    },
+  };
+
+  const $ = (id) => document.getElementById(id);
+  let tab = 'pilgrimages';
+  let token = null; // 로그인한 관리자의 access token (이 탭을 닫으면 사라짐)
+  try { token = sessionStorage.getItem('admin_token'); } catch (e) {}
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text; // textContent 만 사용 → 데이터에 HTML이 있어도 실행되지 않음
+    return e;
+  }
+
+  /* ---------- 날짜 / D-day ---------- */
+  function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  function daysLeft(s) {
+    const t = new Date(); t.setHours(0, 0, 0, 0);
+    return Math.round((parseDate(s) - t) / 86400000);
+  }
+  function fmtDate(s) {
+    const d = parseDate(s);
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]})`;
+  }
+  function ddayLabel(n) { return n === 0 ? 'D-Day' : 'D-' + n; }
+
+  /* ---------- 서버 통신 ---------- */
+  async function api(path, opts = {}) {
+    const res = await fetch(SUPABASE_URL + path, {
+      ...opts,
+      headers: {
+        apikey: SUPABASE_KEY,
+        Authorization: 'Bearer ' + (token || SUPABASE_KEY),
+        'Content-Type': 'application/json',
+        ...(opts.headers || {}),
+      },
+    });
+    if (res.status === 401 || (res.status === 403 && token)) {
+      if (token) { logout(); throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.'); }
+    }
+    if (!res.ok) {
+      let m = 'HTTP ' + res.status;
+      try { const j = await res.json(); m = j.message || j.msg || m; } catch (e) {}
+      throw new Error(m);
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  async function login(email, password) {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.access_token) throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    token = j.access_token;
+    try { sessionStorage.setItem('admin_token', token); } catch (e) {}
+  }
+
+  function logout() {
+    token = null;
+    try { sessionStorage.removeItem('admin_token'); } catch (e) {}
+    renderAll();
+  }
+
+  /* ---------- 입력 폼 ---------- */
+  function buildForm(cfg, row, { onSave, onCancel, saveLabel }) {
+    const form = el('form', 'box' + (row ? ' edit' : ''));
+    form.noValidate = false;
+    const grid = el('div', 'grid');
+    const inputs = {};
+
+    cfg.fields.forEach((f) => {
+      const lab = el('label', 'f' + (f.wide ? ' wide' : ''));
+      lab.append(f.label + (f.required ? ' *' : ''));
+      let inp;
+      if (f.type === 'textarea') inp = el('textarea');
+      else if (f.type === 'select') {
+        inp = el('select');
+        f.options.forEach((o) => { const op = el('option', null, o.label); op.value = o.value; inp.append(op); });
+      } else {
+        inp = el('input'); inp.type = f.type;
+        if (f.min != null) inp.min = f.min;
+        if (f.type === 'number') inp.step = 1;
+      }
+      if (f.required) inp.required = true;
+      const cur = row ? row[f.key] : f.def;
+      inp.value = cur == null ? '' : cur;
+      inputs[f.key] = inp;
+      lab.append(inp);
+      grid.append(lab);
+    });
+    form.append(grid);
+
+    const msg = el('div', 'msg');
+    const btns = el('div', 'row');
+    const save = el('button', 'btn', saveLabel); save.type = 'submit';
+    btns.append(save);
+    if (onCancel) { const c = el('button', 'btn ghost', '취소'); c.type = 'button'; c.addEventListener('click', onCancel); btns.append(c); }
+    form.append(btns, msg);
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const data = {};
+      cfg.fields.forEach((f) => {
+        const v = inputs[f.key].value.trim();
+        if (f.type === 'number') data[f.key] = v === '' ? null : Number(v);
+        else data[f.key] = v === '' && !f.required ? null : v;
+      });
+      save.disabled = true; msg.className = 'msg'; msg.textContent = '저장 중…';
+      try { await onSave(data); }
+      catch (e) { msg.className = 'msg err'; msg.textContent = '저장하지 못했습니다: ' + e.message; save.disabled = false; }
+    });
+    return form;
+  }
+
+  /* ---------- 카드 ---------- */
+  function card(cfg, row) {
+    const n = daysLeft(row[cfg.dateKey]);
+    const past = n < 0;
+    const active = !row.status || row.status === 'open'; // 마감·취소된 일정은 빨간 경고를 쓰지 않음
+    const urgent = !past && active && n <= URGENT_DAYS;
+
+    const item = el('article', 'item' + (past ? ' past' : '') + (urgent ? ' urgent' : ''));
+    const top = el('div', 'top');
+    top.append(el('h3', 'title', row.title));
+    if (row.status) top.append(el('span', 'badge ' + row.status, STATUS[row.status] || row.status));
+    if (!past) top.append(el('span', 'badge dday' + (urgent ? ' urgent' : ''), ddayLabel(n)));
+    item.append(top);
+
+    const meta = el('div', 'meta');
+    meta.append(el('span', urgent ? 'urgent' : null, '📅 ' + fmtDate(row[cfg.dateKey]) + (urgent ? ' · 마감 임박' : '')));
+    if (row.place) meta.append(el('span', null, '📍 ' + row.place));
+    if (row.price != null) meta.append(el('span', null, '💰 ' + Number(row.price).toLocaleString('ko-KR') + '원'));
+    if (row.capacity != null) meta.append(el('span', null, '👥 정원 ' + row.capacity + '명'));
+    item.append(meta);
+    if (row.description) item.append(el('p', 'desc', row.description));
+
+    if (token) {
+      const act = el('div', 'row');
+      const b = el('button', 'btn small', '수정'); b.type = 'button';
+      b.addEventListener('click', () => {
+        const form = buildForm(cfg, row, {
+          saveLabel: '저장',
+          onCancel: () => form.replaceWith(item),
+          onSave: async (data) => {
+            await api(`/rest/v1/${cfg.table}?id=eq.${row.id}`, { method: 'PATCH', body: JSON.stringify(data) });
+            await loadList();
+          },
+        });
+        item.replaceWith(form);
+      });
+      act.append(b);
+      item.append(act);
+    }
+    return item;
+  }
+
+  function section(title, cfg, rows) {
+    const frag = document.createDocumentFragment();
+    frag.append(el('h2', null, title));
+    const list = el('div', 'list');
+    rows.forEach((r) => list.append(card(cfg, r)));
+    frag.append(list);
+    return frag;
+  }
+
+  /* ---------- 화면 ---------- */
+  async function loadList() {
+    const cfg = CONFIG[tab];
+    const box = $('list');
+    box.replaceChildren(el('div', 'state', '불러오는 중…'));
+    try {
+      const rows = await api(`/rest/v1/${cfg.table}?select=*&order=${cfg.dateKey}.asc`);
+      const upcoming = rows.filter((r) => daysLeft(r[cfg.dateKey]) >= 0);
+      const past = rows.filter((r) => daysLeft(r[cfg.dateKey]) < 0).reverse();
+      box.replaceChildren();
+      if (!rows.length) { box.append(el('div', 'state', `등록된 ${cfg.label} 일정이 아직 없습니다.`)); return; }
+      if (upcoming.length) box.append(section('다가오는 일정', cfg, upcoming));
+      else box.append(el('div', 'state', '다가오는 일정이 아직 없습니다.'));
+      if (past.length) box.append(section('지난 일정', cfg, past));
+    } catch (e) {
+      const s = el('div', 'state', '불러오지 못했습니다: ' + e.message);
+      const b = el('button', 'btn ghost small', '다시 불러오기'); b.type = 'button';
+      b.addEventListener('click', loadList);
+      s.append(document.createElement('br'), b);
+      box.replaceChildren(s);
+    }
+  }
+
+  function renderAdminChrome() {
+    const on = !!token;
+    $('admin-tag').hidden = !on;
+    $('auth-btn').textContent = on ? '로그아웃' : '관리자 로그인';
+
+    const slot = $('add-slot');
+    slot.replaceChildren();
+    if (!on) return;
+    const cfg = CONFIG[tab];
+    const open = el('button', 'btn', '+ ' + cfg.label + ' 추가'); open.type = 'button';
+    open.style.marginBottom = '16px';
+    open.addEventListener('click', () => {
+      const form = buildForm(cfg, null, {
+        saveLabel: '추가하기',
+        onCancel: () => slot.replaceChildren(open),
+        onSave: async (data) => {
+          await api(`/rest/v1/${cfg.table}`, { method: 'POST', body: JSON.stringify(data) });
+          slot.replaceChildren(open);
+          await loadList();
+        },
+      });
+      form.style.marginBottom = '16px';
+      slot.replaceChildren(form);
+      form.querySelector('input').focus();
+    });
+    slot.append(open);
+  }
+
+  function renderLogin() {
+    const slot = $('login-slot');
+    slot.replaceChildren();
+    const form = el('form', 'box'); form.style.marginBottom = '16px';
+    form.append(el('div', null, '관리자 로그인'));
+    const grid = el('div', 'grid');
+    const mk = (label, type, ac) => {
+      const l = el('label', 'f'); l.append(label);
+      const i = el('input'); i.type = type; i.required = true; i.autocomplete = ac;
+      l.append(i); grid.append(l); return i;
+    };
+    const email = mk('이메일', 'email', 'username');
+    const pw = mk('비밀번호', 'password', 'current-password');
+    const msg = el('div', 'msg');
+    const row = el('div', 'row');
+    const go = el('button', 'btn', '로그인'); go.type = 'submit';
+    const cancel = el('button', 'btn ghost', '취소'); cancel.type = 'button';
+    cancel.addEventListener('click', () => slot.replaceChildren());
+    row.append(go, cancel);
+    form.append(grid, row, msg);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      go.disabled = true; msg.className = 'msg'; msg.textContent = '로그인 중…';
+      try { await login(email.value.trim(), pw.value); slot.replaceChildren(); renderAll(); }
+      catch (e) { msg.className = 'msg err'; msg.textContent = e.message; go.disabled = false; }
+    });
+    slot.append(form);
+    email.focus();
+  }
+
+  function renderAll() { renderAdminChrome(); loadList(); }
+
+  $('auth-btn').addEventListener('click', () => {
+    if (token) logout();
+    else if ($('login-slot').firstChild) $('login-slot').replaceChildren();
+    else renderLogin();
+  });
+
+  document.querySelectorAll('.tabs button').forEach((b) => {
+    b.addEventListener('click', () => {
+      tab = b.dataset.tab;
+      document.querySelectorAll('.tabs button').forEach((x) => x.setAttribute('aria-pressed', String(x === b)));
+      renderAll();
+    });
+  });
+
+  renderAll();
+</script>
+</body>
+</html>

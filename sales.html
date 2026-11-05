@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>매출 · 봉불사</title>
+<style>
+  :root {
+    --bg: #faf6ef;
+    --panel: #ffffff;
+    --side: #3b2a20;
+    --side-text: #e9dccb;
+    --accent: #c8862a;
+    --text: #2b2118;
+    --muted: #7a6a5b;
+    --line: #e6dccd;
+    --ok-fg: #2f6b2a;
+    --red: #c62828;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif; background: var(--bg); color: var(--text); }
+
+  .bar { background: var(--side); color: var(--side-text); display: flex; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 32px; }
+  .bar .name { font-size: 20px; font-weight: 700; color: #fff; }
+  .bar .sub { font-size: 13px; color: #c9b7a2; }
+  .bar .sp { flex: 1; }
+  .bar a, .bar button.link { color: inherit; text-decoration: none; font: inherit; font-size: 15px; background: none; border: 0; padding: 8px 12px; border-radius: 10px; cursor: pointer; }
+  .bar a:hover, .bar button.link:hover { background: rgba(255,255,255,.08); }
+
+  header.page { padding: 22px 32px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  header.page h1 { margin: 0; font-size: 22px; }
+  .admin-tag { font-size: 13px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: #f3e6cf; color: #8a5a12; }
+
+  main { padding: 28px 32px 48px; max-width: 880px; }
+  h2 { font-size: 20px; margin: 32px 0 12px; }
+  h2:first-child { margin-top: 0; }
+
+  .box { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; }
+  label.f { display: grid; gap: 6px; font-size: 14px; color: var(--muted); }
+  label.f.wide { grid-column: 1 / -1; }
+  input, select { font: inherit; color: var(--text); background: #fff; border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%; }
+  .btn { font: inherit; font-weight: 700; border: 0; border-radius: 10px; padding: 10px 18px; cursor: pointer; background: var(--accent); color: #fff; }
+  .btn:hover { filter: brightness(.95); }
+  .btn.ghost { background: var(--panel); color: var(--text); border: 1px solid var(--line); font-weight: 400; }
+  .btn.small { padding: 7px 14px; font-size: 14px; }
+  .btn:disabled { opacity: .6; cursor: default; }
+  .btn:focus-visible, input:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .row { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .preview { font-size: 15px; color: var(--muted); }
+  .preview b { color: var(--text); font-size: 18px; }
+  .msg { font-size: 14px; min-height: 1.2em; }
+  .msg.err { color: var(--red); }
+  .msg.ok { color: var(--ok-fg); }
+
+  .sum { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin-bottom: 14px; }
+  .sum div { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 18px; }
+  .sum span { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; }
+  .sum b { font-size: 22px; }
+
+  .tablewrap { overflow-x: auto; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15px; min-width: 520px; }
+  th, td { padding: 12px 14px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+  th { font-size: 13px; color: var(--muted); font-weight: 600; }
+  td.num, th.num { text-align: right; }
+  tfoot td { font-weight: 700; border-bottom: 0; background: #f6efe3; }
+  tr:last-child td { border-bottom: 0; }
+
+  .stock { display: grid; gap: 8px; }
+  .stock div { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 12px 16px; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+  .stock .low { color: var(--red); font-weight: 700; }
+
+  .state { padding: 32px 0; text-align: center; color: var(--muted); }
+
+  @media (max-width: 720px) {
+    .bar, header.page { padding-left: 16px; padding-right: 16px; }
+    main { padding: 20px 16px 36px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div><div class="name">🪷 봉불사</div><div class="sub">성지순례 봉찬회</div></div>
+  <div class="sp"></div>
+  <a href="index.html">홈으로</a>
+  <a href="menu.html">행사 관리</a>
+  <button class="link" id="auth-btn" type="button" hidden>로그아웃</button>
+</div>
+
+<header class="page">
+  <h1>매출</h1>
+  <span class="admin-tag" id="admin-tag" hidden>관리자 모드</span>
+</header>
+
+<main id="root"></main>
+
+<script>
+  // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 매출 조회·입력은 로그인한 관리인만 가능합니다(DB의 RLS 규칙).
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+
+  const $ = (id) => document.getElementById(id);
+  const root = $('root');
+  let token = null;
+  try { token = sessionStorage.getItem('admin_token'); } catch (e) {} // menu.html 과 같은 로그인 공유(같은 탭)
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text; // textContent 만 사용
+    return e;
+  }
+  const won = (n) => Number(n).toLocaleString('ko-KR') + '원';
+
+  function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  function fmtShort(s) { const d = parseDate(s); return `${d.getMonth() + 1}/${d.getDate()}`; }
+  function fmtTime(iso) { return new Date(iso).toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' }); }
+  function startOfTodayISO() { const t = new Date(); t.setHours(0, 0, 0, 0); return t.toISOString(); }
+  function daysLeft(s) { const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((parseDate(s) - t) / 86400000); }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(SUPABASE_URL + path, {
+      ...opts,
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (token || SUPABASE_KEY), 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    });
+    if ((res.status === 401 || res.status === 403) && token) {
+      let expired = res.status === 401;
+      if (res.status === 403) { try { expired = /jwt|token/i.test((await res.clone().json()).message || ''); } catch (e) {} }
+      if (expired) { logout(); throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.'); }
+    }
+    if (!res.ok) {
+      let m = 'HTTP ' + res.status;
+      try { const j = await res.json(); m = j.message || j.msg || m; } catch (e) {}
+      throw new Error(m);
+    }
+    return res.status === 204 ? null : res.json();
+  }
+
+  async function login(email, password) {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.access_token) throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    token = j.access_token;
+    try { sessionStorage.setItem('admin_token', token); } catch (e) {}
+  }
+  function logout() {
+    token = null;
+    try { sessionStorage.removeItem('admin_token'); } catch (e) {}
+    render();
+  }
+  $('auth-btn').addEventListener('click', logout);
+
+  /* ---------- 로그인 화면 ---------- */
+  function renderLogin() {
+    root.replaceChildren(el('h2', null, '관리자 로그인'));
+    root.append(el('p', 'preview', '매출은 관리자만 볼 수 있습니다.'));
+    const form = el('form', 'box');
+    const grid = el('div', 'grid');
+    const mk = (label, type, ac) => {
+      const l = el('label', 'f'); l.append(label);
+      const i = el('input'); i.type = type; i.required = true; i.autocomplete = ac;
+      l.append(i); grid.append(l); return i;
+    };
+    const email = mk('이메일', 'email', 'username');
+    const pw = mk('비밀번호', 'password', 'current-password');
+    const msg = el('div', 'msg');
+    const go = el('button', 'btn', '로그인'); go.type = 'submit';
+    form.append(grid, go, msg);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      go.disabled = true; msg.className = 'msg'; msg.textContent = '로그인 중…';
+      try { await login(email.value.trim(), pw.value); render(); }
+      catch (e) { msg.className = 'msg err'; msg.textContent = e.message; go.disabled = false; }
+    });
+    root.append(form);
+    email.focus();
+  }
+
+  /* ---------- 매출 화면 ---------- */
+  let packages = [];
+
+  async function render() {
+    const on = !!token;
+    $('admin-tag').hidden = !on;
+    $('auth-btn').hidden = !on;
+    if (!on) { renderLogin(); return; }
+
+    root.replaceChildren(el('div', 'state', '불러오는 중…'));
+    try {
+      await refreshData();
+    } catch (e) {
+      if (!token) return; // 만료되어 로그인 화면으로 돌아간 경우
+      const s = el('div', 'state', '불러오지 못했습니다: ' + e.message);
+      const b = el('button', 'btn ghost small', '다시 불러오기'); b.type = 'button';
+      b.addEventListener('click', render);
+      s.append(document.createElement('br'), b);
+      root.replaceChildren(s);
+    }
+  }
+
+  async function refreshData() {
+    const [pk, sales] = await Promise.all([
+      api('/rest/v1/pilgrimages?select=id,title,trip_date,price,capacity,remaining,status&order=trip_date.asc'),
+      api('/rest/v1/sales?select=*,pilgrimages(title)&sold_at=gte.' + encodeURIComponent(startOfTodayISO()) + '&order=sold_at.desc'),
+    ]);
+    packages = pk;
+    draw(sales);
+  }
+
+  function draw(sales) {
+    const sellable = packages.filter((p) => p.status === 'open' && daysLeft(p.trip_date) >= 0 && (p.remaining == null || p.remaining > 0));
+
+    root.replaceChildren();
+
+    /* 1) 판매 입력 */
+    root.append(el('h2', null, '판매 입력'));
+    const form = el('form', 'box');
+    if (!sellable.length) {
+      form.append(el('div', 'preview', '판매할 수 있는 일정이 없습니다. (모집중이고 재고가 남은 일정만 선택할 수 있습니다)'));
+    } else {
+      const grid = el('div', 'grid');
+      const l1 = el('label', 'f wide'); l1.append('행사 일정');
+      const sel = el('select');
+      sellable.forEach((p) => {
+        const o = el('option', null, `${p.title} · ${fmtShort(p.trip_date)} · ${p.price == null ? '금액 미정' : won(p.price)} · ${p.remaining == null ? '재고 제한 없음' : '남은 ' + p.remaining + '명'}`);
+        o.value = p.id; sel.append(o);
+      });
+      l1.append(sel);
+      const l2 = el('label', 'f'); l2.append('수량(인원)');
+      const qty = el('input'); qty.type = 'number'; qty.min = 1; qty.step = 1; qty.value = 1; qty.required = true;
+      l2.append(qty);
+      grid.append(l1, l2);
+
+      const preview = el('div', 'preview');
+      const row = el('div', 'row');
+      const go = el('button', 'btn', '판매하기'); go.type = 'submit';
+      const msg = el('div', 'msg');
+      row.append(go, preview);
+      form.append(grid, row, msg);
+
+      const cur = () => sellable.find((p) => String(p.id) === sel.value);
+      function upd() {
+        const p = cur(); const q = Number(qty.value);
+        if (p && p.remaining != null) qty.max = p.remaining; else qty.removeAttribute('max');
+        const total = (p && p.price ? p.price : 0) * (q > 0 ? q : 0);
+        preview.replaceChildren('합계 ', el('b', null, won(total)));
+      }
+      sel.addEventListener('change', upd);
+      qty.addEventListener('input', upd);
+      upd();
+
+      form.addEventListener('submit', async (ev) => {
+        ev.preventDefault();
+        const p = cur(); const q = Number(qty.value);
+        if (!Number.isInteger(q) || q < 1) { msg.className = 'msg err'; msg.textContent = '수량은 1 이상의 정수여야 합니다.'; return; }
+        if (p.remaining != null && q > p.remaining) { msg.className = 'msg err'; msg.textContent = `재고가 부족합니다. (남은 ${p.remaining}명)`; return; }
+        go.disabled = true; msg.className = 'msg'; msg.textContent = '저장 중…';
+        try {
+          await api('/rest/v1/rpc/record_sale', { method: 'POST', body: JSON.stringify({ p_pilgrimage_id: p.id, p_people: q }) });
+          await refreshData();
+          const m = $('flash'); if (m) { m.className = 'msg ok'; m.textContent = `판매를 기록했습니다: ${p.title} ${q}명`; }
+        } catch (e) {
+          msg.className = 'msg err'; msg.textContent = '판매하지 못했습니다: ' + e.message; go.disabled = false;
+          await refreshData().catch(() => {}); // 다른 곳에서 재고가 바뀌었을 수 있어 목록을 새로 고침
+        }
+      });
+    }
+    root.append(form, Object.assign(el('div', 'msg'), { id: 'flash' }));
+
+    /* 2) 오늘 판매 */
+    const today = new Date();
+    root.append(el('h2', null, `오늘 판매 (${today.getMonth() + 1}월 ${today.getDate()}일)`));
+    const totalAmt = sales.reduce((s, r) => s + r.amount, 0);
+    const totalPeople = sales.reduce((s, r) => s + r.people, 0);
+    const sum = el('div', 'sum');
+    [['판매 건수', sales.length + '건'], ['판매 인원', totalPeople + '명'], ['합계 금액', won(totalAmt)]].forEach(([k, v]) => {
+      const d = el('div'); d.append(el('span', null, k), el('b', null, v)); sum.append(d);
+    });
+    root.append(sum);
+
+    if (!sales.length) {
+      root.append(el('div', 'state', '오늘 판매 내역이 아직 없습니다.'));
+    } else {
+      const wrap = el('div', 'tablewrap');
+      const t = el('table');
+      const head = el('thead'); const hr = el('tr');
+      [['시각'], ['행사 일정'], ['인원', 1], ['단가', 1], ['금액', 1]].forEach(([h, n]) => hr.append(el('th', n ? 'num' : null, h)));
+      head.append(hr); t.append(head);
+      const body = el('tbody');
+      sales.forEach((r) => {
+        const tr = el('tr');
+        tr.append(el('td', null, fmtTime(r.sold_at)), el('td', null, (r.pilgrimages && r.pilgrimages.title) || '(삭제된 일정)'),
+          el('td', 'num', r.people + '명'), el('td', 'num', won(r.unit_price)), el('td', 'num', won(r.amount)));
+        body.append(tr);
+      });
+      t.append(body);
+      const foot = el('tfoot'); const fr = el('tr');
+      fr.append(el('td', null, '합계'), el('td', null, sales.length + '건'), el('td', 'num', totalPeople + '명'), el('td'), el('td', 'num', won(totalAmt)));
+      foot.append(fr); t.append(foot);
+      wrap.append(t); root.append(wrap);
+    }
+
+    /* 3) 재고 현황 */
+    root.append(el('h2', null, '재고 현황'));
+    const stock = el('div', 'stock');
+    const open = packages.filter((p) => p.status === 'open' && daysLeft(p.trip_date) >= 0);
+    if (!open.length) stock.append(el('div', null, '모집중인 일정이 없습니다.'));
+    open.forEach((p) => {
+      const d = el('div');
+      d.append(el('span', null, `${p.title} · ${fmtShort(p.trip_date)}`));
+      const low = p.remaining != null && p.remaining <= 5;
+      d.append(el('span', low ? 'low' : null, p.remaining == null ? '제한 없음' : (p.remaining === 0 ? '품절' : `남은 ${p.remaining}명`) + (p.capacity != null ? ` / 정원 ${p.capacity}명` : '')));
+      stock.append(d);
+    });
+    root.append(stock);
+  }
+
+  render();
+</script>
+</body>
+</html>
