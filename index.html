@@ -239,8 +239,9 @@
     if (admin) {
       who.append(mk('span', 'admin-tag', '관리자'));
       const a1 = mk('a', 'btn ghost small', '행사 관리'); a1.href = 'menu.html';
+      const a3 = mk('a', 'btn ghost small', '전체 예약'); a3.href = 'reservations.html';
       const a2 = mk('a', 'btn ghost small', '매출'); a2.href = 'sales.html';
-      who.append(a1, a2);
+      who.append(a1, a3, a2);
     }
     if (m || admin) {
       const out = mk('button', 'btn ghost small', '로그아웃'); out.type = 'button';

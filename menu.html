@@ -20,6 +20,8 @@
   <div><div class="name">🪷 봉불사</div><div class="sub">성지순례 봉찬회</div></div>
   <div class="sp"></div>
   <a href="index.html">홈으로</a>
+  <a href="reservations.html">전체 예약</a>
+  <a href="sales.html">매출</a>
   <button class="link" id="auth-btn" type="button">관리자 로그인</button>
 </div>
 
@@ -207,7 +209,7 @@
     meta.append(el('span', urgent ? 'urgent' : null, '📅 ' + fmtDate(row[cfg.dateKey]) + (urgent ? ' · 마감 임박' : '')));
     if (row.place) meta.append(el('span', null, '📍 ' + row.place));
     if (row.price != null) meta.append(el('span', null, '💰 ' + Number(row.price).toLocaleString('ko-KR') + '원'));
-    if (row.capacity != null) meta.append(el('span', null, '👥 정원 ' + row.capacity + '명'));
+    if (row.capacity != null) meta.append(el('span', null, '👥 정원 ' + row.capacity + '명' + (row.remaining != null ? ' · 남은 자리 ' + row.remaining + '명' : '')));
     item.append(meta);
     if (row.description) item.append(el('p', 'desc', row.description));
 
