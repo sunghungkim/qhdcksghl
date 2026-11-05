@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 예약</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { padding: 36px 40px 56px; }
+  .wrap { max-width: 860px; }
+  .sumbar { display: flex; gap: 10px 28px; flex-wrap: wrap; padding: 16px 20px; margin-bottom: 18px; background: var(--sand); border-radius: 14px; }
+  .sumbar b { font-family: var(--serif); font-size: 1.2rem; }
+  .badge.requested { background: #f3e1bd; color: #6f4a0c; }
+  .badge.confirmed { background: var(--ok-bg); color: var(--ok-fg); }
+  .badge.canceled { background: var(--off-bg); color: var(--off-fg); }
+  .item.canceled { opacity: .6; }
+  @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
+
+<script>
+  // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 내 예약은 회원 확인을 거치는 서버 함수로만 읽습니다.
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+  const STATUS = { requested: '예약 접수', confirmed: '예약 확정', canceled: '취소됨' };
+  const root = document.getElementById('root');
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text; // textContent 만 사용
+    return e;
+  }
+  const won = (n) => Number(n).toLocaleString('ko-KR') + '원';
+  function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  function daysLeft(s) { const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((parseDate(s) - t) / 86400000); }
+  function fmtDate(s) { const d = parseDate(s); return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${['일','월','화','수','목','금','토'][d.getDay()]})`; }
+  function fmtStamp(iso) { const d = new Date(iso); return `${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+  function topGo(hash) { try { window.top.location.hash = hash; } catch (e) { location.href = 'index.html' + hash; } }
+  function currentMember() { try { return window.top.getMember ? window.top.getMember() : null; } catch (e) { return null; } }
+
+  async function rpc(name, body) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${name}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+
+  function needLogin() {
+    const box = el('div', 'state', '회원 로그인 후 내 예약을 볼 수 있습니다.');
+    const b = el('button', 'btn', '로그인하기'); b.type = 'button';
+    b.addEventListener('click', () => topGo('#login'));
+    box.append(document.createElement('br'), b);
+    root.replaceChildren(box);
+  }
+
+  function card(m, r) {
+    const past = daysLeft(r.trip_date) < 0;
+    const item = el('article', 'item ' + r.status + (past && r.status !== 'canceled' ? ' past' : ''));
+    const top = el('div', 'top');
+    top.append(el('h3', 'title', r.title), el('span', 'badge ' + r.status, STATUS[r.status] || r.status));
+    item.append(top);
+
+    const meta = el('div', 'meta');
+    meta.append(el('span', null, '📅 ' + fmtDate(r.trip_date)), el('span', null, '📍 ' + r.place), el('span', null, '👥 ' + r.people + '명'));
+    if (r.price != null) meta.append(el('span', null, '💰 ' + (r.price === 0 ? '무료' : won(r.price * r.people) + ' (1인 ' + won(r.price) + ')')));
+    item.append(meta);
+    item.append(el('p', 'hint', '예약 신청: ' + fmtStamp(r.created_at)));
+
+    if (r.status === 'requested' && !past) {
+      const act = el('div', 'actions');
+      const b = el('button', 'btn ghost small', '예약 취소'); b.type = 'button';
+      const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+      b.addEventListener('click', () => {
+        // 한 번 더 확인 (실수로 취소하지 않도록)
+        b.hidden = true;
+        const ask = el('span', null, '정말 취소할까요? ');
+        const yes = el('button', 'btn small', '예, 취소합니다'); yes.type = 'button';
+        const no = el('button', 'btn ghost small', '아니요'); no.type = 'button';
+        no.addEventListener('click', () => { ask.remove(); yes.remove(); no.remove(); b.hidden = false; });
+        yes.addEventListener('click', async () => {
+          yes.disabled = true; msg.className = 'msg'; msg.textContent = '취소하는 중…';
+          try {
+            const res = await rpc('cancel_my_reservation', { p_name: m.name, p_phone: m.phone, p_id: r.id });
+            if (res.ok) { load(); return; }
+            msg.className = 'msg err'; msg.textContent = '취소할 수 없는 예약입니다. 문의 전화로 연락해 주세요.';
+          } catch (e) { msg.className = 'msg err'; msg.textContent = '취소하지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+          yes.disabled = false;
+        });
+        act.append(ask, yes, no);
+      });
+      act.append(b);
+      item.append(act, msg);
+    }
+    return item;
+  }
+
+  async function load() {
+    const m = currentMember();
+    if (!m) { needLogin(); return; }
+    root.replaceChildren(el('div', 'state', '불러오는 중…'));
+    try {
+      const r = await rpc('my_reservations', { p_name: m.name, p_phone: m.phone });
+      if (!r.ok) { needLogin(); return; }
+      const items = r.items || [];
+      root.replaceChildren();
+
+      if (!items.length) {
+        const box = el('div', 'state', m.name + '님의 예약이 아직 없습니다.');
+        const b = el('button', 'btn', '성지순례 일정 보러 가기'); b.type = 'button';
+        b.addEventListener('click', () => topGo('#pilgrimage'));
+        box.append(document.createElement('br'), b);
+        root.append(box);
+        return;
+      }
+
+      const active = items.filter((x) => x.status !== 'canceled');
+      const total = active.reduce((s, x) => s + (x.price || 0) * x.people, 0);
+      const bar = el('div', 'sumbar');
+      [['예약', active.length + '건'], ['인원', active.reduce((s, x) => s + x.people, 0) + '명'], ['예상 금액', won(total)]].forEach(([k, v]) => {
+        const d = el('div'); d.append(el('span', 'hint', k + ' '), el('b', null, v)); bar.append(d);
+      });
+      root.append(bar);
+
+      const upcoming = items.filter((x) => daysLeft(x.trip_date) >= 0 && x.status !== 'canceled');
+      const rest = items.filter((x) => !(daysLeft(x.trip_date) >= 0 && x.status !== 'canceled'));
+      if (upcoming.length) {
+        root.append(el('h2', 'sec', '다가오는 예약'));
+        const l = el('div', 'list'); upcoming.forEach((x) => l.append(card(m, x))); root.append(l);
+      }
+      if (rest.length) {
+        root.append(el('h2', 'sec', '지난 예약 · 취소된 예약'));
+        const l = el('div', 'list'); rest.forEach((x) => l.append(card(m, x))); root.append(l);
+      }
+    } catch (e) {
+      const box = el('div', 'state', '예약을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      const b = el('button', 'btn ghost', '다시 불러오기'); b.type = 'button'; b.addEventListener('click', load);
+      box.append(document.createElement('br'), b);
+      root.replaceChildren(box);
+    }
+  }
+  load();
+</script>
+</body>
+</html>

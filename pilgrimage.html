@@ -8,6 +8,9 @@
 <style>
   body { padding: 36px 40px 56px; }
   .wrap { max-width: 860px; }
+  .reserve-box { display: grid; gap: 8px; }
+  .people { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
+  .people input { width: 5.2rem; min-height: 48px; text-align: center; }
   @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
 </style>
 </head>
@@ -49,15 +52,63 @@
 
     if (p.description) item.append(el('p', 'desc', p.description));
 
-    if (p.status === 'open' && !past) {
-      const act = el('div', 'actions');
-      const b = el('button', 'btn', '예약하기');
-      b.type = 'button';
-      b.addEventListener('click', () => { window.top.location.hash = '#reserve'; });
-      act.append(b);
-      item.append(act);
-    }
+    if (p.status === 'open' && !past) item.append(reserveBox(p));
     return item;
+  }
+
+  /* ---------- 예약하기: 회원만 가능, 누르면 "내 예약"에 추가됩니다 ---------- */
+  function topGo(hash) { try { window.top.location.hash = hash; } catch (e) { location.href = 'index.html' + hash; } }
+  function currentMember() { try { return window.top.getMember ? window.top.getMember() : null; } catch (e) { return null; } }
+
+  function reserveBox(p) {
+    const box = el('div', 'reserve-box');
+    const row = el('div', 'actions');
+    const lab = el('label', 'people', '인원 ');
+    const num = el('input'); num.type = 'number'; num.min = 1; num.max = 100; num.step = 1; num.value = 1;
+    num.setAttribute('aria-label', '예약 인원(명)');
+    lab.append(num, document.createTextNode(' 명'));
+    const b = el('button', 'btn', '예약하기'); b.type = 'button';
+    row.append(lab, b);
+    const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+    box.append(row, msg);
+
+    const say = (text, kind, linkText, hash) => {
+      msg.className = 'msg' + (kind ? ' ' + kind : '');
+      msg.replaceChildren(text);
+      if (linkText) {
+        const a = el('button', 'btn ghost small', linkText); a.type = 'button';
+        a.style.marginLeft = '10px';
+        a.addEventListener('click', () => topGo(hash));
+        msg.append(a);
+      }
+    };
+
+    b.addEventListener('click', async () => {
+      const m = currentMember();
+      if (!m) { say('회원 로그인 후 예약할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
+      const people = Number(num.value);
+      if (!Number.isInteger(people) || people < 1 || people > 100) { say('인원은 1명 이상으로 입력해 주세요.', 'err'); return; }
+      b.disabled = true; say('예약하는 중…');
+      try {
+        const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_reserve`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+          body: JSON.stringify({ p_name: m.name, p_phone: m.phone, p_pilgrimage_id: p.id, p_people: people }),
+        });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        const r = await res.json();
+        if (r.ok) say('예약되었습니다. 내 예약에 추가했어요.', 'ok', '내 예약 보기', '#reserve');
+        else if (r.reason === 'duplicate') say('이미 예약하신 일정입니다.', 'err', '내 예약 보기', '#reserve');
+        else if (r.reason === 'closed') say('마감되었거나 지난 일정입니다.', 'err');
+        else if (r.reason === 'full') say('남은 자리가 부족합니다.', 'err');
+        else if (r.reason === 'locked') say('잠시 막혔습니다. 10분 뒤에 다시 시도해 주세요.', 'err');
+        else say('로그인 정보를 확인해 주세요.', 'err', '로그인하기', '#login');
+      } catch (e) {
+        say('예약하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');
+      }
+      b.disabled = false;
+    });
+    return box;
   }
 
   function section(title, items, past) {

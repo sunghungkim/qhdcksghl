@@ -24,6 +24,10 @@ Both are on `login.html` (side-by-side cards), opened by the header "로그인" 
 - **Member open mode (currently ON)**: while `site_settings.member_login_open = 'true'`, `member_login` accepts ANY non-empty name + phone (the members list is not consulted). So being "logged in as a member" proves nothing yet — do not gate personal data on it. To enforce the members list later: fill `members`, then `update site_settings set value = 'false' where key = 'member_login_open'`.
 - **Member** (아이디 = 이름, 비밀번호 = 전화번호): when open mode is off, checked by the `member_login(p_name, p_phone)` RPC against the `members` table (anon cannot read `members` directly; phone is stored digits-only; 5 wrong tries per name in 10 min locks it). Result is kept in `sessionStorage['member']` and child pages can read it with `window.top.getMember()`. Non-members are never blocked from viewing schedules — login only unlocks member features. The members list is filled in later by the owner (Supabase dashboard / `members` table).
 
+## Reservations ("내 예약")
+
+Clicking 예약하기 on `pilgrimage.html` calls the `member_reserve` RPC with the logged-in member's name+phone (read from `window.top.getMember()`); `reserve.html` ("내 예약") lists them via `my_reservations` and cancels via `cancel_my_reservation`. All three go through `member_check`, so they obey the same open-mode / members-list switch. Direct inserts into `reservations` by anon are blocked (the old open insert policy was dropped); one active reservation per person per trip (partial unique index); status is `requested` → `confirmed` (admin sets it in the dashboard for now) / `canceled`. Reservations do NOT change `pilgrimages.remaining` — only `record_sale` (매출) does.
+
 ## Security rules that shape the architecture
 
 - Browser code may only use the Supabase **anon/publishable** key. AI provider keys (e.g. OpenRouter) live only in Edge Function env vars, never in HTML or git.
