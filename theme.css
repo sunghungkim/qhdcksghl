@@ -93,6 +93,15 @@ input, select, textarea {
 }
 textarea { min-height: 96px; resize: vertical; }
 
+/* ---------- 페이지 나누기 ---------- */
+.pager-wrap { margin-top: 28px; display: grid; gap: 10px; justify-items: center; }
+.pager { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+.pager .btn { min-width: 48px; min-height: 48px; padding: 8px 14px; font-size: 1rem; }
+.pager .btn.current { background: var(--brand); color: #fff; border-color: var(--brand); font-weight: 700; }
+.pager .btn:disabled:not(.current) { opacity: .45; }
+.pager-gap { color: var(--muted); padding: 0 2px; }
+.pager-info { color: var(--muted); font-size: .9rem; }
+
 /* ---------- 사진 자리 (나중에 실제 사진으로 교체) ---------- */
 .photo-ph {
   display: grid; place-items: center; text-align: center;

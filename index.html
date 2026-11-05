@@ -247,7 +247,8 @@
       const out = mk('button', 'btn ghost small', '로그아웃'); out.type = 'button';
       out.addEventListener('click', () => {
         try { sessionStorage.removeItem('member'); sessionStorage.removeItem('admin_token'); } catch (e) {}
-        renderWho(); reloadFrame();
+        renderWho();
+        location.hash = '#login'; // 로그아웃하면 로그인 화면으로
       });
       who.append(out);
     } else {

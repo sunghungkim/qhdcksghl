@@ -137,7 +137,7 @@
   function logout() {
     token = null;
     try { sessionStorage.removeItem('admin_token'); } catch (e) {}
-    renderAll();
+    location.href = 'index.html#login'; // 로그아웃하면 로그인 화면으로
   }
 
   /* ---------- 입력 폼 ---------- */

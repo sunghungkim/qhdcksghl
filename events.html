@@ -14,6 +14,7 @@
 <body>
 <div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
 
+<script src="paging.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -55,15 +56,6 @@
     return item;
   }
 
-  function section(title, rows) {
-    const frag = document.createDocumentFragment();
-    frag.append(el('h2', 'sec', title));
-    const list = el('div', 'list');
-    rows.forEach((r) => list.append(card(r)));
-    frag.append(list);
-    return frag;
-  }
-
   async function load() {
     root.replaceChildren(el('div', 'state', '불러오는 중…'));
     try {
@@ -78,9 +70,11 @@
 
       root.replaceChildren();
       if (!rows.length) { root.append(el('div', 'state', '등록된 행사 일정이 아직 없습니다.')); return; }
-      if (upcoming.length) root.append(section('다가오는 행사', upcoming));
-      else root.append(el('div', 'state', '다가오는 행사가 아직 없습니다.'));
-      if (past.length) root.append(section('지난 행사', past));
+      // 한 페이지에 5개씩
+      paginate(root, [
+        { title: '다가오는 행사', rows: upcoming, emptyText: '다가오는 행사가 아직 없습니다.' },
+        { title: '지난 행사', rows: past },
+      ], (r) => card(r), { perPage: 5 });
     } catch (e) {
       const box = el('div', 'state', '행사 일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
       const b = el('button', 'btn ghost', '다시 불러오기');
