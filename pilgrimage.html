@@ -128,8 +128,25 @@
 
       root.replaceChildren();
       if (!rows.length) { root.append(el('div', 'state', '등록된 성지순례 일정이 아직 없습니다.')); return; }
-      // 한 페이지에 5개씩
-      paginate(root, [
+      // 검색 + 한 페이지에 5개씩
+      const dateWords = (s) => { const [y, m, d] = s.split('-').map(Number); return `${s} ${y}년 ${m}월 ${d}일 ${m}월${d}일 ${m}/${d}`; };
+      const haystack = (r) => [r.title, r.place, r.description, r.price === 0 ? '무료' : r.price, STATUS[r.status], dateWords(r.trip_date)].join(' ');
+      const results = el('div');
+      const sb = searchBox({
+        placeholder: '예: 해맞이, 통도사, 12월 20일, 무박',
+        onSearch: (q) => {
+          const hit = rows.filter((r) => matchesQuery(haystack(r), q));
+          sb.setInfo(q ? `"${q}" 검색 결과 ${hit.length}건` : `전체 ${rows.length}건`);
+          if (!hit.length) { results.replaceChildren(el('div', 'state', '검색 결과가 없습니다. 다른 낱말로 찾아보세요.')); return; }
+          paginate(results, [
+            { title: '다가오는 일정', rows: hit.filter((r) => r.trip_date >= t), past: false, emptyText: q ? '' : '다가오는 일정이 아직 없습니다.' },
+            { title: '지난 일정', rows: hit.filter((r) => r.trip_date < t).reverse(), past: true },
+          ], (p, g) => card(p, g.past), { perPage: 5 });
+        },
+      });
+      root.append(sb.el, results);
+      sb.setInfo(`전체 ${rows.length}건`);
+      paginate(results, [
         { title: '다가오는 일정', rows: upcoming, past: false, emptyText: '다가오는 일정이 아직 없습니다.' },
         { title: '지난 일정', rows: past, past: true },
       ], (p, g) => card(p, g.past), { perPage: 5 });

@@ -1,3 +1,47 @@
+/* ---------- 검색 (성지순례 일정, 행사 일정 공용) ----------
+   searchBox({ placeholder, onSearch(q) }) → { el, setInfo(text) }
+   - 글자를 입력하면 바로 검색되고, 띄어쓰기로 나눈 낱말이 모두 들어 있는 항목만 남깁니다.
+   matchesQuery(haystack, q) → 검색어 q 의 모든 낱말이 haystack 글자 안에 있으면 true (대소문자 구분 없음) */
+function matchesQuery(haystack, q) {
+  const words = String(q || '').toLowerCase().split(/\s+/).filter(Boolean);
+  const h = String(haystack || '').toLowerCase();
+  return words.every((w) => h.includes(w));
+}
+
+function searchBox(opts) {
+  const mk = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const form = mk('form', 'searchbar');
+  form.setAttribute('role', 'search');
+  const label = mk('label', 'searchbar-label', '일정 검색');
+  const row = mk('div', 'searchbar-row');
+  const input = mk('input');
+  input.type = 'search';
+  input.placeholder = (opts && opts.placeholder) || '검색어를 입력하세요';
+  input.autocomplete = 'off';
+  input.maxLength = 50;
+  input.setAttribute('aria-label', '일정 검색어');
+  const clear = mk('button', 'btn ghost', '지우기');
+  clear.type = 'button';
+  clear.hidden = true;
+  row.append(input, clear);
+  const info = mk('div', 'searchbar-info');
+  info.setAttribute('role', 'status');
+  form.append(label, row, info);
+
+  let timer = null;
+  const fire = () => { clear.hidden = !input.value; opts.onSearch(input.value.trim()); };
+  input.addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(fire, 150); });
+  form.addEventListener('submit', (e) => { e.preventDefault(); clearTimeout(timer); fire(); });
+  clear.addEventListener('click', () => { input.value = ''; fire(); input.focus(); });
+
+  return { el: form, setInfo: (t) => { info.textContent = t || ''; } };
+}
+
 /* 목록을 한 페이지에 N개씩 나누어 보여 주는 공용 기능 (성지순례 일정, 행사 일정)
    사용: paginate(container, groups, makeCard, { perPage: 5 })
    groups = [{ title: '다가오는 일정', rows: [...], past: false, emptyText: '없습니다' }, ...]  (보여 줄 순서대로)
