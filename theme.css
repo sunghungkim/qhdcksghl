@@ -1,0 +1,130 @@
+/* 봉불사 · 봉찬회 공통 디자인 — 따뜻한 색, 큰 글자 */
+@import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap");
+
+:root {
+  --bg: #fbf5ea;        /* 따뜻한 크림 */
+  --panel: #fffdf8;
+  --sand: #f2e7d3;      /* 연한 베이지 면 */
+  --text: #2a1d14;
+  --muted: #65523f;     /* 크림 위에서도 읽기 편한 진한 갈색 회색 */
+  --line: #e2d3ba;
+  --brand: #8c4a2f;     /* 황토빛 갈색 */
+  --brand-dark: #6e3720;
+  --gold: #c8862a;
+  --ok-bg: #e2f0de; --ok-fg: #2a5f25;
+  --off-bg: #ece3d3; --off-fg: #5b4b3a;
+  --red: #b3261e; --red-bg: #fde8e6;
+  --serif: "Noto Serif KR", "Batang", "Nanum Myeongjo", serif;
+  --sans: "Noto Sans KR", "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+}
+
+* { box-sizing: border-box; }
+html { font-size: 19px; }
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 1rem;
+  line-height: 1.7;
+  background: var(--bg);
+  color: var(--text);
+}
+h1, h2, h3 { font-family: var(--serif); line-height: 1.35; }
+a { color: var(--brand-dark); }
+:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+
+/* ---------- 버튼 ---------- */
+.btn {
+  display: inline-block;
+  font: inherit; font-weight: 700; font-size: 1rem; text-decoration: none; text-align: center;
+  min-height: 48px; padding: 11px 22px;
+  border: 0; border-radius: 12px; cursor: pointer;
+  background: var(--brand); color: #fff;
+}
+.btn:hover { background: var(--brand-dark); }
+.btn.ghost { background: var(--panel); color: var(--text); border: 1.5px solid var(--line); font-weight: 500; }
+.btn.ghost:hover { background: var(--sand); }
+.btn.small { min-height: 42px; padding: 8px 16px; font-size: .95rem; }
+.btn:disabled { opacity: .6; cursor: default; }
+
+/* ---------- 카드 · 배지 ---------- */
+.item, .card, .box {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 24px;
+}
+.item { display: grid; gap: 12px; }
+.item.past { opacity: .72; }
+.item.urgent { border-color: var(--red); border-left: 7px solid var(--red); }
+.top { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.title { font-size: 1.3rem; font-weight: 700; margin: 0; }
+.badge { font-size: .85rem; font-weight: 700; padding: 3px 12px; border-radius: 999px; }
+.badge.open { background: var(--ok-bg); color: var(--ok-fg); }
+.badge.closed, .badge.canceled, .badge.dday { background: var(--off-bg); color: var(--off-fg); }
+.badge.dday.urgent { background: var(--red); color: #fff; }
+.meta { display: flex; flex-wrap: wrap; gap: 4px 20px; color: var(--muted); font-size: 1rem; }
+.meta .urgent { color: var(--red); font-weight: 700; }
+.desc { margin: 0; line-height: 1.75; white-space: pre-line; }
+.list { display: grid; gap: 16px; }
+.actions, .row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+
+/* 구역 제목: 가는 선 위에 작은 글씨 (조용한 느낌) */
+.sec { font-size: 1.1rem; font-weight: 500; font-family: var(--sans); color: var(--muted); margin: 36px 0 16px; padding-bottom: 10px; border-bottom: 1.5px solid var(--line); }
+.sec:first-child { margin-top: 0; }
+
+/* ---------- 안내 · 메시지 ---------- */
+.state { padding: 44px 0; text-align: center; color: var(--muted); }
+.state .btn { margin-top: 14px; }
+.msg { font-size: .95rem; min-height: 1.4em; }
+.msg.err { color: var(--red); font-weight: 500; }
+.msg.ok { color: var(--ok-fg); font-weight: 500; }
+.hint { color: var(--muted); font-size: .95rem; margin: 0 0 18px; }
+
+/* ---------- 입력 ---------- */
+form.box { display: grid; gap: 16px; }
+form.box.edit { border-color: var(--gold); border-width: 2px; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+label.f { display: grid; gap: 6px; font-size: .95rem; color: var(--muted); font-weight: 500; }
+label.f.wide { grid-column: 1 / -1; }
+input, select, textarea {
+  font: inherit; color: var(--text); background: #fff;
+  border: 1.5px solid #cdb995; border-radius: 10px;
+  padding: 10px 12px; min-height: 48px; width: 100%;
+}
+textarea { min-height: 96px; resize: vertical; }
+
+/* ---------- 사진 자리 (나중에 실제 사진으로 교체) ---------- */
+.photo-ph {
+  display: grid; place-items: center; text-align: center;
+  width: 100%; aspect-ratio: 16 / 7; min-height: 160px;
+  background: var(--sand);
+  border: 2px dashed #c9b48f; border-radius: 16px;
+  color: var(--muted); font-size: 1.2rem; font-weight: 500;
+}
+img.photo { display: block; width: 100%; max-height: 380px; object-fit: cover; border-radius: 16px; }
+
+/* ---------- 위쪽 띠 (관리 페이지용) ---------- */
+.bar {
+  background: var(--sand); color: var(--text);
+  border-bottom: 1px solid var(--line);
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+  padding: 14px 32px;
+}
+.bar .name { font-family: var(--serif); font-size: 1.4rem; font-weight: 700; color: var(--brand-dark); }
+.bar .sub { font-size: .85rem; color: var(--muted); }
+.bar .sp { flex: 1; }
+.bar a, .bar button.link {
+  color: var(--text); text-decoration: none; font: inherit; font-size: 1rem;
+  background: none; border: 0; padding: 10px 14px; border-radius: 10px; cursor: pointer; min-height: 44px;
+}
+.bar a:hover, .bar button.link:hover { background: rgba(140,74,47,.12); }
+
+header.page { padding: 26px 32px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+header.page h1 { margin: 0; font-size: 1.7rem; }
+.admin-tag { font-size: .85rem; font-weight: 700; padding: 3px 12px; border-radius: 999px; background: #f3e1bd; color: #6f4a0c; }
+
+@media (max-width: 720px) {
+  html { font-size: 18px; }
+  .item, .card, .box { padding: 20px; }
+  .bar, header.page { padding-left: 16px; padding-right: 16px; }
+}
