@@ -1,0 +1,240 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>봉불사 · 성지순례 봉찬회</title>
+<style>
+  :root {
+    --bg: #faf6ef;
+    --panel: #ffffff;
+    --side: #3b2a20;
+    --side-text: #e9dccb;
+    --accent: #c8862a;
+    --text: #2b2118;
+    --muted: #7a6a5b;
+    --line: #e6dccd;
+    --side-w: 240px;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: "Pretendard", "Noto Sans KR", "Malgun Gothic", system-ui, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    display: flex;
+  }
+
+  /* ---------- 왼쪽 메뉴 ---------- */
+  .side {
+    width: var(--side-w);
+    flex: none;
+    background: var(--side);
+    color: var(--side-text);
+    display: flex;
+    flex-direction: column;
+    padding: 28px 16px;
+    gap: 28px;
+  }
+  .brand { padding: 0 8px; }
+  .brand .name { font-size: 22px; font-weight: 700; color: #fff; letter-spacing: .02em; }
+  .brand .sub { margin-top: 4px; font-size: 13px; color: #c9b7a2; }
+  .nav { display: flex; flex-direction: column; gap: 4px; }
+  .nav a {
+    display: block;
+    padding: 12px 14px;
+    border-radius: 10px;
+    color: inherit;
+    text-decoration: none;
+    font-size: 16px;
+    border-left: 3px solid transparent;
+  }
+  .nav a:hover { background: rgba(255,255,255,.08); }
+  .nav a[aria-current="page"] {
+    background: rgba(200,134,42,.22);
+    border-left-color: var(--accent);
+    color: #fff;
+    font-weight: 700;
+  }
+  .nav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---------- 가운데 화면 ---------- */
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+  .main > header {
+    padding: 22px 32px;
+    border-bottom: 1px solid var(--line);
+    background: var(--panel);
+  }
+  .main > header h1 { margin: 0; font-size: 22px; }
+  .stage { flex: 1; min-height: 0; position: relative; }
+  .view { display: none; height: 100%; }
+  .view.on { display: block; }
+  iframe.frame { width: 100%; height: 100%; border: 0; background: var(--bg); }
+
+  .pad { padding: 32px; overflow: auto; height: 100%; }
+  .hero { max-width: 760px; }
+  .hero h2 { font-size: 28px; margin: 0 0 8px; }
+  .hero p { color: var(--muted); line-height: 1.7; margin: 0 0 28px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; max-width: 760px; }
+  .card {
+    display: block;
+    padding: 20px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    color: inherit;
+    text-decoration: none;
+  }
+  .card:hover { border-color: var(--accent); }
+  .card b { display: block; font-size: 17px; margin-bottom: 6px; }
+  .card span { font-size: 14px; color: var(--muted); }
+
+  .soon { height: 100%; display: grid; place-items: center; text-align: center; padding: 32px; }
+  .soon .badge {
+    display: inline-block;
+    padding: 6px 14px;
+    border-radius: 999px;
+    background: #f3e6cf;
+    color: #8a5a12;
+    font-size: 14px;
+    font-weight: 700;
+    margin-bottom: 14px;
+  }
+  .soon h2 { margin: 0 0 8px; font-size: 26px; }
+  .soon p { margin: 0; color: var(--muted); }
+
+  /* ---------- 좁은 화면(휴대폰): 메뉴를 위로 ---------- */
+  @media (max-width: 720px) {
+    body { flex-direction: column; }
+    .side { width: 100%; flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px; overflow-x: auto; }
+    .brand .sub { display: none; }
+    .brand .name { font-size: 18px; white-space: nowrap; }
+    .nav { flex-direction: row; gap: 4px; }
+    .nav a { white-space: nowrap; padding: 10px 12px; font-size: 15px; border-left: 0; border-bottom: 3px solid transparent; border-radius: 8px; }
+    .nav a[aria-current="page"] { border-bottom-color: var(--accent); }
+    .main > header { padding: 16px; }
+    .pad, .soon { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="side">
+  <div class="brand">
+    <div class="name">🪷 봉불사</div>
+    <div class="sub">성지순례 봉찬회</div>
+  </div>
+  <nav class="nav" id="nav" aria-label="주 메뉴"></nav>
+</aside>
+
+<div class="main">
+  <header><h1 id="title">홈</h1></header>
+  <main class="stage">
+    <!-- 홈 -->
+    <section class="view" id="view-home">
+      <div class="pad">
+        <div class="hero">
+          <h2>봉불사에 오신 것을 환영합니다</h2>
+          <p>성지순례 봉찬회의 일정과 봉불사 소식을 한곳에서 확인하고, 순례를 예약하실 수 있습니다.<br>(소개 문구는 관리인이 정하는 대로 바꿀 수 있습니다.)</p>
+        </div>
+        <div class="cards" id="cards"></div>
+      </div>
+    </section>
+
+    <!-- 준비 중 -->
+    <section class="view" id="view-soon">
+      <div class="soon">
+        <div>
+          <span class="badge">준비 중</span>
+          <h2 id="soon-name"></h2>
+          <p>이 페이지는 아직 준비 중입니다. 조금만 기다려 주세요.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 만들어진 페이지가 열리는 곳 -->
+    <section class="view" id="view-frame">
+      <iframe class="frame" id="frame" title="페이지 내용"></iframe>
+    </section>
+  </main>
+</div>
+
+<script>
+  // 메뉴 목록. file 이 있는 페이지는 파일이 실제로 존재할 때만 가운데에 열리고,
+  // 없으면 "준비 중"이 보입니다. 새 페이지 파일을 만들면 자동으로 열립니다.
+  const PAGES = [
+    { id: 'home',       label: '홈',            file: null,              desc: '' },
+    { id: 'pilgrimage', label: '성지순례 일정', file: 'pilgrimage.html', desc: '다가오는 성지순례 일정을 확인하세요' },
+    { id: 'events',     label: '행사 일정',     file: 'events.html',     desc: '봉불사 행사 일정을 확인하세요' },
+    { id: 'temple',     label: '절 소개',       file: 'temple.html',     desc: '봉불사를 소개합니다' },
+    { id: 'reserve',    label: '예약',          file: 'reserve.html',    desc: '성지순례를 예약하세요' },
+  ];
+
+  const $ = (id) => document.getElementById(id);
+  const views = { home: $('view-home'), soon: $('view-soon'), frame: $('view-frame') };
+
+  // 메뉴와 홈 카드 만들기
+  PAGES.forEach((p) => {
+    const a = document.createElement('a');
+    a.href = '#' + p.id;
+    a.textContent = p.label;
+    a.dataset.id = p.id;
+    $('nav').appendChild(a);
+
+    if (p.id !== 'home') {
+      const c = document.createElement('a');
+      c.className = 'card';
+      c.href = '#' + p.id;
+      c.innerHTML = '<b></b><span></span>';
+      c.querySelector('b').textContent = p.label;
+      c.querySelector('span').textContent = p.desc;
+      $('cards').appendChild(c);
+    }
+  });
+
+  function show(name) {
+    Object.entries(views).forEach(([k, el]) => el.classList.toggle('on', k === name));
+  }
+
+  async function exists(file) {
+    try {
+      const r = await fetch(file, { method: 'HEAD', cache: 'no-store' });
+      return r.ok;
+    } catch (e) {
+      return false; // 파일을 직접 연 경우(서버 없음) 등
+    }
+  }
+
+  let token = 0; // 메뉴를 빠르게 연속으로 눌렀을 때 마지막 클릭만 반영
+  async function open() {
+    const id = location.hash.slice(1);
+    const page = PAGES.find((p) => p.id === id) || PAGES[0];
+    const my = ++token;
+
+    document.querySelectorAll('#nav a').forEach((a) => {
+      if (a.dataset.id === page.id) a.setAttribute('aria-current', 'page');
+      else a.removeAttribute('aria-current');
+    });
+    $('title').textContent = page.label;
+    document.title = page.label + ' · 봉불사';
+
+    if (!page.file) { show('home'); return; }
+
+    show(null); // 확인하는 동안 이전 화면이 남아 보이지 않게 비움
+    const ok = await exists(page.file);
+    if (my !== token) return;
+    if (ok) {
+      $('frame').src = page.file;
+      show('frame');
+    } else {
+      $('soon-name').textContent = page.label;
+      show('soon');
+    }
+  }
+
+  window.addEventListener('hashchange', open);
+  open();
+</script>
+</body>
+</html>
