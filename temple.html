@@ -14,6 +14,9 @@
   dt { color: var(--muted); font-size: .95rem; }
   dd { margin: 0; font-size: 1.15rem; line-height: 1.6; }
   dd a { font-weight: 700; }
+  .mapbox { display: grid; gap: 10px; }
+  .mapbox iframe { width: 100%; height: 240px; border: 1px solid var(--line); border-radius: 14px; background: var(--sand); }
+  .maptabs { display: flex; gap: 8px; }
   .btn.naver { background: #0a7d3b; }
   .btn.naver:hover { background: #07622e; }
   @media (max-width: 760px) { body { padding: 24px 16px 40px; } dl { grid-template-columns: 1fr; gap: 2px; } dd { margin-bottom: 12px; } }
@@ -60,7 +63,32 @@
     }
     if (dl.children.length) card.append(dl);
 
-    // 네이버 지도: 주소로 검색한 결과를 새 창에서 엽니다 (지도를 페이지 안에 넣으려면 별도의 네이버 지도 키가 필요합니다)
+    // 작은 위치 사진: 주소로 찾아 보여 줍니다 (위성 ↔ 지도 전환).
+    // 네이버 지도 사진은 네이버 지도 API 키가 있어야 넣을 수 있어서, 키 없이 쓸 수 있는 구글 지도 화면을 임시로 사용합니다.
+    if (t.address) {
+      const q = encodeURIComponent(t.address);
+      const src = (type) => `https://maps.google.com/maps?q=${q}&t=${type}&z=17&hl=ko&output=embed`;
+      const box = el('div', 'mapbox');
+      const frame = el('iframe');
+      frame.title = t.name + ' 위치 지도';
+      frame.loading = 'lazy';
+      frame.referrerPolicy = 'no-referrer-when-downgrade';
+      frame.src = src('k');
+      const tabs = el('div', 'maptabs');
+      [['k', '위성사진'], ['m', '지도']].forEach(([type, label], i) => {
+        const b = el('button', 'btn small ' + (i ? 'ghost' : ''), label); b.type = 'button';
+        b.setAttribute('aria-pressed', String(i === 0));
+        b.addEventListener('click', () => {
+          frame.src = src(type);
+          tabs.querySelectorAll('button').forEach((x) => { x.classList.toggle('ghost', x !== b); x.setAttribute('aria-pressed', String(x === b)); });
+        });
+        tabs.append(b);
+      });
+      box.append(tabs, frame);
+      card.append(box);
+    }
+
+    // 네이버 지도: 주소로 검색한 결과를 새 창에서 엽니다
     if (t.address) {
       const act = el('div', 'actions');
       const m = el('a', 'btn naver', '네이버 지도에서 보기');

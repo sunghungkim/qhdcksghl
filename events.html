@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>행사 일정</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { padding: 36px 40px 56px; }
+  .wrap { max-width: 860px; }
+  @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
+
+<script>
+  // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+  const URGENT_DAYS = 5; // 5일 이하로 남으면 빨간색
+  const root = document.getElementById('root');
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text; // textContent 만 사용 → 데이터에 HTML이 있어도 실행되지 않음
+    return e;
+  }
+
+  function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  function daysLeft(s) { const t = new Date(); t.setHours(0, 0, 0, 0); return Math.round((parseDate(s) - t) / 86400000); }
+  function fmtDate(s) {
+    const d = parseDate(s);
+    return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 (${['일', '월', '화', '수', '목', '금', '토'][d.getDay()]})`;
+  }
+
+  function card(ev) {
+    const n = daysLeft(ev.event_date);
+    const past = n < 0;
+    const urgent = !past && n <= URGENT_DAYS;
+    const item = el('article', 'item' + (past ? ' past' : '') + (urgent ? ' urgent' : ''));
+
+    const top = el('div', 'top');
+    top.append(el('h3', 'title', ev.title));
+    if (!past) top.append(el('span', 'badge dday' + (urgent ? ' urgent' : ''), n === 0 ? 'D-Day' : 'D-' + n));
+    item.append(top);
+
+    const meta = el('div', 'meta');
+    meta.append(el('span', urgent ? 'urgent' : null, '📅 ' + fmtDate(ev.event_date)));
+    if (ev.place) meta.append(el('span', null, '📍 ' + ev.place));
+    item.append(meta);
+
+    if (ev.description) item.append(el('p', 'desc', ev.description));
+    return item;
+  }
+
+  function section(title, rows) {
+    const frag = document.createDocumentFragment();
+    frag.append(el('h2', 'sec', title));
+    const list = el('div', 'list');
+    rows.forEach((r) => list.append(card(r)));
+    frag.append(list);
+    return frag;
+  }
+
+  async function load() {
+    root.replaceChildren(el('div', 'state', '불러오는 중…'));
+    try {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/events?select=*&order=event_date.asc`, {
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY },
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const rows = await res.json();
+
+      const upcoming = rows.filter((r) => daysLeft(r.event_date) >= 0);
+      const past = rows.filter((r) => daysLeft(r.event_date) < 0).reverse();
+
+      root.replaceChildren();
+      if (!rows.length) { root.append(el('div', 'state', '등록된 행사 일정이 아직 없습니다.')); return; }
+      if (upcoming.length) root.append(section('다가오는 행사', upcoming));
+      else root.append(el('div', 'state', '다가오는 행사가 아직 없습니다.'));
+      if (past.length) root.append(section('지난 행사', past));
+    } catch (e) {
+      const box = el('div', 'state', '행사 일정을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      const b = el('button', 'btn ghost', '다시 불러오기');
+      b.type = 'button';
+      b.addEventListener('click', load);
+      box.append(document.createElement('br'), b);
+      root.replaceChildren(box);
+    }
+  }
+  load();
+</script>
+</body>
+</html>
