@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>로그인</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { padding: 36px 40px 56px; }
+  .wrap { max-width: 920px; display: grid; gap: 20px; }
+  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; }
+  .card { display: grid; gap: 14px; }
+  .card h2 { margin: 0; font-size: 1.4rem; color: var(--brand-dark); }
+  .card p.sub { margin: 0; color: var(--muted); font-size: .95rem; }
+  .card form { display: grid; gap: 14px; }
+  .card.admin { background: var(--sand); }
+  .note { margin: 0; padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+  @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="note" id="status" hidden></p>
+
+  <div class="two">
+    <!-- 회원 로그인 -->
+    <section class="card" aria-labelledby="h-member">
+      <h2 id="h-member">회원 로그인</h2>
+      <p class="sub">아이디는 <b>이름</b>, 비밀번호는 <b>전화번호</b>입니다.</p>
+      <form id="member-form">
+        <label class="f">아이디 (이름)<input id="m-name" type="text" autocomplete="username" required maxlength="50"></label>
+        <label class="f">비밀번호 (전화번호)<input id="m-phone" type="password" inputmode="numeric" autocomplete="current-password" required maxlength="20"></label>
+        <button class="btn" type="submit" id="m-go">회원 로그인</button>
+        <div class="msg" id="m-msg" role="status"></div>
+      </form>
+      <p class="hint" style="margin:0">회원이 아니셔도 로그인 없이 일정을 볼 수 있습니다.</p>
+    </section>
+
+    <!-- 관리자 로그인 -->
+    <section class="card admin" aria-labelledby="h-admin">
+      <h2 id="h-admin">관리자 로그인</h2>
+      <p class="sub">일정·금액 수정, 행사 추가, 매출 확인은 관리자만 할 수 있습니다.</p>
+      <form id="admin-form">
+        <label class="f">이메일<input id="a-email" type="email" autocomplete="username" required></label>
+        <label class="f">비밀번호<input id="a-pw" type="password" autocomplete="current-password" required></label>
+        <button class="btn" type="submit" id="a-go">관리자 로그인</button>
+        <div class="msg" id="a-msg" role="status"></div>
+      </form>
+    </section>
+  </div>
+</div>
+
+<script>
+  // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+  const $ = (id) => document.getElementById(id);
+
+  function say(el, text, kind) { el.className = 'msg' + (kind ? ' ' + kind : ''); el.textContent = text; }
+
+  // 로그인 후 위쪽 표시를 새로 고치고 이동 (이 페이지가 index.html 안에서 열렸는지에 따라 다르게)
+  function afterLogin(target) {
+    const inShell = window.top !== window;
+    if (inShell && window.top.renderWho) window.top.renderWho();
+    if (target === 'admin') {
+      (inShell ? window.top : window).location.href = 'menu.html';
+    } else if (inShell) {
+      window.top.location.hash = '#home';
+    } else {
+      location.href = 'index.html';
+    }
+  }
+
+  function showStatus() {
+    const s = $('status');
+    const parts = [];
+    try {
+      const m = JSON.parse(sessionStorage.getItem('member') || 'null');
+      if (m && m.name) parts.push('회원 ' + m.name + '님으로 로그인되어 있습니다.');
+      if (sessionStorage.getItem('admin_token')) parts.push('관리자로 로그인되어 있을 수 있습니다.');
+    } catch (e) {}
+    s.hidden = !parts.length;
+    s.textContent = parts.join(' ');
+  }
+  showStatus();
+
+  /* ---------- 회원 로그인 (이름 + 전화번호) ---------- */
+  $('member-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const msg = $('m-msg'), go = $('m-go');
+    const name = $('m-name').value.trim(), phone = $('m-phone').value;
+    go.disabled = true; say(msg, '확인 중…');
+    try {
+      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/member_login', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ p_name: name, p_phone: phone }),
+      });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const r = await res.json();
+      if (r && r.ok) {
+        try { sessionStorage.setItem('member', JSON.stringify({ name: r.name, phone })); } catch (e) {}
+        $('m-phone').value = '';
+        say(msg, '로그인되었습니다.', 'ok');
+        afterLogin('member');
+        return;
+      }
+      if (r && r.reason === 'locked') say(msg, '틀린 횟수가 많아 잠시 막혔습니다. 10분 뒤에 다시 시도해 주세요.', 'err');
+      else say(msg, '아이디(이름) 또는 비밀번호(전화번호)가 맞지 않습니다. 회원이 아니시면 로그인 없이 일정을 보실 수 있습니다.', 'err');
+    } catch (e) {
+      say(msg, '로그인하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');
+    }
+    go.disabled = false;
+  });
+
+  /* ---------- 관리자 로그인 (이메일 + 비밀번호, Supabase 로그인) ---------- */
+  $('admin-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const msg = $('a-msg'), go = $('a-go');
+    go.disabled = true; say(msg, '확인 중…');
+    try {
+      const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+        method: 'POST',
+        headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: $('a-email').value.trim(), password: $('a-pw').value }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (!res.ok || !j.access_token) {
+        say(msg, '이메일 또는 비밀번호가 올바르지 않습니다.', 'err');
+        go.disabled = false;
+        return;
+      }
+      try { sessionStorage.setItem('admin_token', j.access_token); } catch (e) {}
+      $('a-pw').value = '';
+      say(msg, '로그인되었습니다. 관리 화면으로 이동합니다…', 'ok');
+      afterLogin('admin');
+    } catch (e) {
+      say(msg, '로그인하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');
+      go.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>

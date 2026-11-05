@@ -16,6 +16,13 @@ The site is the 성지순례 봉찬회 · 봉불사 homepage: visitors browse pi
 - The shell needs to be served over HTTP (not opened via `file://`) for the existence check to work. Any static server works, e.g. PowerShell `HttpListener` or `python -m http.server`.
 - **Backend = the owner's Supabase project** (tables: `pilgrimages`, `events`, `temple_info`, `reservations`) **plus a single Edge Function named `cafe-ai`** for the AI feature. Don't add other backends.
 
+## Two separate logins
+
+Both are on `login.html` (side-by-side cards), opened by the header "로그인" button (`#login`; a hidden entry in the shell's `PAGES`, not in the left menu). The shell header (`renderWho()`) shows who is logged in plus logout; `menu.html` / `sales.html` still have their own admin login form as a fallback.
+
+- **Admin** (Supabase Auth email/password): token kept in `sessionStorage['admin_token']`; after login the page goes to `menu.html`. RLS treats any `authenticated` user as admin, so sign-ups must stay disabled.
+- **Member** (아이디 = 이름, 비밀번호 = 전화번호): checked by the `member_login(p_name, p_phone)` RPC against the `members` table (anon cannot read `members` directly; phone is stored digits-only; 5 wrong tries per name in 10 min locks it). Result is kept in `sessionStorage['member']` and child pages can read it with `window.top.getMember()`. Non-members are never blocked from viewing schedules — login only unlocks member features. The members list is filled in later by the owner (Supabase dashboard / `members` table).
+
 ## Security rules that shape the architecture
 
 - Browser code may only use the Supabase **anon/publishable** key. AI provider keys (e.g. OpenRouter) live only in Edge Function env vars, never in HTML or git.

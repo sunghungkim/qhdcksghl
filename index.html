@@ -34,8 +34,10 @@
 
   /* ---------- 가운데 화면 ---------- */
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .main > header { padding: 26px 40px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  .main > header { padding: 22px 40px; border-bottom: 1px solid var(--line); background: var(--panel); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 5; }
   .main > header h1 { margin: 0; font-size: 1.8rem; }
+  .who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+  .who .name { font-weight: 700; color: var(--brand-dark); }
   .stage { flex: 1; min-height: 0; position: relative; }
   .view { display: none; height: 100%; }
   .view.on { display: block; }
@@ -70,7 +72,8 @@
     .nav { flex-direction: row; gap: 4px; }
     .nav a { white-space: nowrap; padding: 10px 14px; border-left: 0; border-bottom: 4px solid transparent; border-radius: 10px; font-size: 1.05rem; }
     .nav a[aria-current="page"] { border-bottom-color: var(--brand); box-shadow: none; }
-    .main > header { padding: 18px 16px; }
+    .main > header { padding: 14px 16px; }
+    .main > header h1 { font-size: 1.5rem; }
     .pad, .soon { padding: 24px 16px 40px; }
     .hero h2 { font-size: 1.7rem; }
   }
@@ -88,7 +91,10 @@
 </aside>
 
 <div class="main">
-  <header><h1 id="title">홈</h1></header>
+  <header>
+    <h1 id="title">홈</h1>
+    <div class="who" id="who"></div>
+  </header>
   <main class="stage">
     <!-- 홈 -->
     <section class="view" id="view-home">
@@ -135,12 +141,13 @@
     { id: 'events',     label: '행사 일정',     file: 'events.html',     desc: '봉불사 행사 일정을 확인하세요' },
     { id: 'temple',     label: '절 소개',       file: 'temple.html',     desc: '봉불사를 소개합니다' },
     { id: 'reserve',    label: '내 예약',       file: 'reserve.html',    desc: '성지순례를 예약하세요' },
+    { id: 'login',      label: '로그인',        file: 'login.html',      desc: '', hidden: true }, // 왼쪽 메뉴·바로가기에는 안 보임
   ];
 
   const $ = (id) => document.getElementById(id);
   const views = { home: $('view-home'), soon: $('view-soon'), frame: $('view-frame') };
 
-  PAGES.forEach((p) => {
+  PAGES.filter((p) => !p.hidden).forEach((p) => {
     const a = document.createElement('a');
     a.href = '#' + p.id;
     a.textContent = p.label;
@@ -200,6 +207,55 @@
 
   window.addEventListener('hashchange', open);
   open();
+
+  /* ---------- 로그인 상태 표시 ----------
+     회원 로그인(이름/전화번호)과 관리자 로그인(이메일/비밀번호)은 login.html 에서 따로 합니다.
+     - 회원: sessionStorage['member'] = {name, phone}  → 다른 페이지는 window.top.getMember() 로 읽음
+     - 관리자: sessionStorage['admin_token']          → 행사 관리·매출 페이지가 사용
+     비회원은 로그인 없이 일정을 볼 수 있습니다. */
+  function getMember() {
+    try { return JSON.parse(sessionStorage.getItem('member') || 'null'); } catch (e) { return null; }
+  }
+  window.getMember = getMember;
+
+  function adminActive() {
+    try {
+      const tk = sessionStorage.getItem('admin_token');
+      if (!tk) return false;
+      const exp = JSON.parse(atob(tk.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).exp;
+      return exp * 1000 > Date.now();
+    } catch (e) { return false; }
+  }
+
+  function reloadFrame() { const f = $('frame'); if (f.getAttribute('src')) f.contentWindow.location.reload(); }
+
+  function renderWho() {
+    const who = $('who');
+    who.replaceChildren();
+    const m = getMember(), admin = adminActive();
+    const mk = (tag, cls, text) => { const e = document.createElement(tag); e.className = cls; e.textContent = text; return e; };
+
+    if (m) who.append(mk('span', 'name', m.name + '님'));
+    if (admin) {
+      who.append(mk('span', 'admin-tag', '관리자'));
+      const a1 = mk('a', 'btn ghost small', '행사 관리'); a1.href = 'menu.html';
+      const a2 = mk('a', 'btn ghost small', '매출'); a2.href = 'sales.html';
+      who.append(a1, a2);
+    }
+    if (m || admin) {
+      const out = mk('button', 'btn ghost small', '로그아웃'); out.type = 'button';
+      out.addEventListener('click', () => {
+        try { sessionStorage.removeItem('member'); sessionStorage.removeItem('admin_token'); } catch (e) {}
+        renderWho(); reloadFrame();
+      });
+      who.append(out);
+    } else {
+      const b = mk('a', 'btn small', '로그인'); b.href = '#login';
+      who.append(b);
+    }
+  }
+  window.renderWho = renderWho;
+  renderWho();
 </script>
 </body>
 </html>
