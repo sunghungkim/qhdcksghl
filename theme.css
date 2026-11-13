@@ -142,6 +142,6 @@ header.page h1 { margin: 0; font-size: 1.7rem; }
 
 @media (max-width: 720px) {
   html { font-size: 18px; }
-  .item, .card, .box { padding: 16px; }
+  .item, .card, .box { padding: 20px; }
   .bar, header.page { padding-left: 16px; padding-right: 16px; }
 }
