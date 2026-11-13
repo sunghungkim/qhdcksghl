@@ -29,7 +29,12 @@
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
-  const BLOG_URL = 'https://blog.naver.com/stda11';
+  // 바깥 링크 (보이는 순서대로). 주소가 바뀌면 여기만 고치면 됩니다.
+  const LINKS = [
+    ['블로그', 'https://blog.naver.com/stda11'],
+    ['카페', 'https://cafe.daum.net/bongchanhoe'],
+    ['인스타', 'https://www.instagram.com/bongbulsa_'],
+  ];
   const root = document.getElementById('root');
 
   function el(tag, cls, text) {
@@ -57,10 +62,12 @@
     if (t.intro) card.append(el('p', 'intro', t.intro));
 
     const dl = el('dl');
-    // 블로그 (주소 위). 새 창에서 열립니다.
-    const blog = el('dd');
-    const ba = el('a', null, BLOG_URL); ba.href = BLOG_URL; ba.target = '_blank'; ba.rel = 'noopener noreferrer';
-    blog.append(ba); dl.append(el('dt', null, '블로그'), blog);
+    // 블로그 · 카페 · 인스타 (주소 위, 이 순서). 눌러서 새 창에서 엽니다.
+    LINKS.forEach(([label, url]) => {
+      const dd = el('dd');
+      const a = el('a', null, url); a.href = url; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      dd.append(a); dl.append(el('dt', null, label), dd);
+    });
     if (t.address) dl.append(el('dt', null, '주소'), el('dd', null, t.address));
     if (t.phone) {
       const dd = el('dd');
