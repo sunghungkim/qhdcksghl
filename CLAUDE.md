@@ -11,7 +11,7 @@ The site is the 성지순례 봉찬회 · 봉불사 homepage: visitors browse pi
 ## Hard constraints (from PRD)
 
 - **One standalone HTML file per page, no npm / no build step.** CSS and JS live in (or are CDN-linked from) each HTML file. Don't introduce bundlers, package.json, or frameworks. To preview, open the files directly or serve the folder with any static server.
-- **Exactly 5 pages**: `index.html` (홈), `pilgrimage.html` (성지순례 일정), `events.html` (행사 일정), `temple.html` (절 소개), `reserve.html` (내 예약). Admin editing is gated by login inside these pages — do not add a 6th admin page.
+- **Exactly 5 pages**, in menu order: `index.html` (홈), `temple.html` (절 소개), `pilgrimage.html` (성지순례 일정), `events.html` (행사 일정), `reserve.html` (내 예약). Admin editing is gated by login inside these pages — do not add a 6th admin page.
 - **`index.html` is the shell**: it owns the left tab menu (the `PAGES` array in its script) and the center area. The home content is inline; the other four pages are separate HTML files loaded into an `<iframe>` in the center. If a page's file doesn't exist yet (checked with a `HEAD` fetch), the shell shows "준비 중" — so creating e.g. `events.html` is all it takes to make that menu entry go live. Sub-pages must therefore NOT include their own menu; they are just the content. Routing is by URL hash (`#events`).
 - The shell needs to be served over HTTP (not opened via `file://`) for the existence check to work. Any static server works, e.g. PowerShell `HttpListener` or `python -m http.server`.
 - **Backend = the owner's Supabase project** (tables: `pilgrimages`, `events`, `temple_info`, `reservations`) **plus a single Edge Function named `cafe-ai`** for the AI feature. Don't add other backends.
