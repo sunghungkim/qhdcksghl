@@ -17,14 +17,14 @@ function searchBox(opts) {
   };
   const form = mk('form', 'searchbar');
   form.setAttribute('role', 'search');
-  const label = mk('label', 'searchbar-label', '일정 검색');
+  const label = mk('label', 'searchbar-label', (opts && opts.label) || '일정 검색');
   const row = mk('div', 'searchbar-row');
   const input = mk('input');
   input.type = 'search';
   input.placeholder = (opts && opts.placeholder) || '검색어를 입력하세요';
   input.autocomplete = 'off';
   input.maxLength = 50;
-  input.setAttribute('aria-label', '일정 검색어');
+  input.setAttribute('aria-label', ((opts && opts.label) || '일정 검색') + '어');
   const clear = mk('button', 'btn ghost', '지우기');
   clear.type = 'button';
   clear.hidden = true;
@@ -106,7 +106,7 @@ function paginate(container, groups, makeCard, opts) {
     let list = null, lastGroup = null;
     entries.slice((page - 1) * perPage, page * perPage).forEach(({ g, row }) => {
       if (g !== lastGroup) {
-        container.append(mk('h2', 'sec', g.title));
+        if (g.title) container.append(mk('h2', 'sec', g.title)); // 제목이 없는 구역은 제목줄을 만들지 않음
         list = mk('div', 'list');
         container.append(list);
         lastGroup = g;

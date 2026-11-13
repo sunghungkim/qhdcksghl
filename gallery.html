@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>동행의 기록</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { padding: 36px 40px 56px; }
+  .wrap { max-width: 980px; }
+  .intro { margin: 0 0 22px; color: var(--muted); }
+
+  /* 사진 칸 (여러 줄 격자) */
+  .gallery .list { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 18px; }
+  .gal-card { padding: 0; overflow: hidden; display: grid; gap: 0; }
+  .gal-thumb { display: block; padding: 0; border: 0; background: var(--sand); cursor: zoom-in; width: 100%; aspect-ratio: 4 / 3; }
+  .gal-thumb img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .gal-body { padding: 14px 16px 16px; display: grid; gap: 6px; }
+  .gal-body .title { font-size: 1.1rem; }
+  .gal-body .meta { font-size: .9rem; gap: 2px 12px; }
+  .gal-body .desc { font-size: .95rem; }
+  .gal-actions { margin-top: 4px; }
+  .badge.cat { background: #f3e1bd; color: #6f4a0c; }
+
+  /* 관리자 올리기 칸 */
+  .upload { margin-bottom: 26px; }
+  .upload h2 { margin: 0; font-size: 1.25rem; color: var(--brand-dark); }
+  .preview { max-width: 220px; border-radius: 12px; border: 1px solid var(--line); }
+  .who-note { margin: 0 0 18px; padding: 10px 16px; background: var(--sand); border-radius: 12px; font-size: .95rem; }
+
+  /* 크게 보기 */
+  .lightbox { position: fixed; inset: 0; z-index: 50; background: rgba(30,20,12,.88); display: grid; place-items: center; padding: 16px; }
+  .lightbox[hidden] { display: none; }
+  .lightbox figure { margin: 0; max-width: 100%; display: grid; gap: 10px; justify-items: center; }
+  .lightbox img { max-width: 100%; max-height: 78vh; border-radius: 10px; background: #000; }
+  .lightbox figcaption { color: #fff; text-align: center; max-width: 720px; white-space: pre-line; }
+  .lightbox .x { position: absolute; top: 12px; right: 12px; }
+
+  @media (max-width: 760px) { body { padding: 24px 16px 40px; } .gallery .list { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="사진 크게 보기">
+  <button class="btn ghost x" id="lb-close" type="button">닫기</button>
+  <figure><img id="lb-img" alt=""><figcaption id="lb-cap"></figcaption></figure>
+</div>
+
+<script src="paging.js"></script>
+<script>
+  // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 사진을 올리거나 지우는 것은 로그인한 관리자만 가능합니다(DB·저장소의 규칙).
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+  const CATS = { pilgrimage: '성지순례', event: '행사', other: '기타' };
+  const root = document.getElementById('root');
+  let rows = [];
+  let adminToken = null;
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text; // textContent 만 사용
+    return e;
+  }
+  function parseDate(s) { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); }
+  function fmtDate(s) { const d = parseDate(s); return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`; }
+  function today() { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; }
+  function topGo(hash) { try { window.top.location.hash = hash; } catch (e) { location.href = 'index.html' + hash; } }
+  function photoUrl(p) { return `${SUPABASE_URL}/storage/v1/object/public/gallery/${encodeURIComponent(p)}`; }
+
+  /* ---------- 관리자 확인 (로그인한 관리자의 토큰이 있고 아직 유효할 때만) ---------- */
+  function findAdminToken() {
+    try {
+      const tk = sessionStorage.getItem('admin_token');
+      if (!tk) return null;
+      const exp = JSON.parse(atob(tk.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))).exp;
+      return exp * 1000 > Date.now() ? tk : null;
+    } catch (e) { return null; }
+  }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(SUPABASE_URL + path, {
+      ...opts,
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (adminToken || SUPABASE_KEY), 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    });
+    if (res.status === 401) { const e = new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.'); e.expired = true; throw e; }
+    if (!res.ok) {
+      let m = 'HTTP ' + res.status;
+      try { const j = await res.json(); m = j.message || j.msg || j.error || m; } catch (e) {}
+      throw new Error(m);
+    }
+    return res.status === 204 ? null : res.json().catch(() => null);
+  }
+
+  /* ---------- 크게 보기 ---------- */
+  const lb = document.getElementById('lightbox');
+  function openLightbox(r) {
+    document.getElementById('lb-img').src = photoUrl(r.photo_path);
+    document.getElementById('lb-img').alt = r.title;
+    document.getElementById('lb-cap').textContent = r.title + (r.caption ? '\n' + r.caption : '');
+    lb.hidden = false;
+    document.getElementById('lb-close').focus();
+  }
+  function closeLightbox() { lb.hidden = true; document.getElementById('lb-img').removeAttribute('src'); }
+  document.getElementById('lb-close').addEventListener('click', closeLightbox);
+  lb.addEventListener('click', (e) => { if (e.target === lb) closeLightbox(); });
+  document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !lb.hidden) closeLightbox(); });
+
+  /* ---------- 사진 카드 ---------- */
+  function card(r) {
+    const item = el('article', 'card gal-card');
+    const th = el('button', 'gal-thumb'); th.type = 'button'; th.setAttribute('aria-label', r.title + ' 크게 보기');
+    const img = el('img'); img.src = photoUrl(r.photo_path); img.alt = r.title; img.loading = 'lazy';
+    th.append(img); th.addEventListener('click', () => openLightbox(r));
+    item.append(th);
+
+    const body = el('div', 'gal-body');
+    const top = el('div', 'top');
+    top.append(el('h3', 'title', r.title), el('span', 'badge cat', CATS[r.category] || '기타'));
+    body.append(top, el('div', 'meta', '📅 ' + fmtDate(r.taken_on)));
+    if (r.caption) body.append(el('p', 'desc', r.caption));
+
+    if (adminToken) {
+      const act = el('div', 'actions gal-actions');
+      const del = el('button', 'btn ghost small', '삭제'); del.type = 'button';
+      const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+      del.addEventListener('click', () => {
+        del.hidden = true;
+        const ask = el('span', null, '이 사진을 지울까요? 되돌릴 수 없습니다. ');
+        const yes = el('button', 'btn small', '예, 지웁니다'); yes.type = 'button';
+        const no = el('button', 'btn ghost small', '아니요'); no.type = 'button';
+        no.addEventListener('click', () => { ask.remove(); yes.remove(); no.remove(); del.hidden = false; });
+        yes.addEventListener('click', async () => {
+          yes.disabled = true; msg.className = 'msg'; msg.textContent = '지우는 중…';
+          try {
+            await api(`/rest/v1/gallery?id=eq.${r.id}`, { method: 'DELETE' });
+            // 파일도 함께 지움 (실패해도 목록에서는 이미 빠졌으므로 계속 진행)
+            try { await api(`/storage/v1/object/gallery/${encodeURIComponent(r.photo_path)}`, { method: 'DELETE' }); } catch (e) {}
+            await load();
+          } catch (e) { msg.className = 'msg err'; msg.textContent = '지우지 못했습니다: ' + e.message; yes.disabled = false; }
+        });
+        act.append(ask, yes, no);
+      });
+      act.append(del); body.append(act, msg);
+    }
+    item.append(body);
+    return item;
+  }
+
+  /* ---------- 관리자: 사진 올리기 ---------- */
+  async function toJpegBlob(file, maxDim = 1600, quality = 0.85) {
+    let bmp;
+    try { bmp = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
+    catch (e) { try { bmp = await createImageBitmap(file); } catch (e2) { throw new Error('이 사진 형식은 읽을 수 없습니다. JPG 또는 PNG 사진으로 올려 주세요.'); } }
+    const scale = Math.min(1, maxDim / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas');
+    c.width = Math.round(bmp.width * scale); c.height = Math.round(bmp.height * scale);
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); // 투명한 PNG 배경은 흰색으로
+    ctx.drawImage(bmp, 0, 0, c.width, c.height);
+    const blob = await new Promise((res) => c.toBlob(res, 'image/jpeg', quality));
+    if (!blob) throw new Error('사진을 변환하지 못했습니다.');
+    return blob;
+  }
+
+  function uploadBox() {
+    const box = el('form', 'box upload');
+    box.append(el('h2', null, '사진 올리기'));
+    box.append(el('p', 'hint', '사진 한 장씩 올립니다. 큰 사진은 자동으로 줄여서 올라갑니다.'));
+
+    const grid = el('div', 'grid');
+    const mk = (label, node, wide) => { const l = el('label', 'f' + (wide ? ' wide' : '')); l.append(label, node); grid.append(l); return node; };
+    const file = el('input'); file.type = 'file'; file.accept = 'image/jpeg,image/png,image/webp,image/*'; file.required = true;
+    mk('사진 *', file, true);
+    const prev = el('img', 'preview'); prev.hidden = true; prev.alt = '올릴 사진 미리보기';
+    const title = el('input'); title.type = 'text'; title.required = true; title.maxLength = 100; title.placeholder = '예: 통도사 참배';
+    mk('제목 *', title);
+    const date = el('input'); date.type = 'date'; date.required = true; date.value = today();
+    mk('다녀온 날 *', date);
+    const cat = el('select');
+    Object.entries(CATS).forEach(([v, l]) => { const o = el('option', null, l); o.value = v; cat.append(o); });
+    mk('구분', cat);
+    const cap = el('textarea'); cap.maxLength = 500; cap.placeholder = '사진 설명 (선택)';
+    mk('설명', cap, true);
+
+    const go = el('button', 'btn', '올리기'); go.type = 'submit';
+    const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+    box.append(grid, prev, go, msg);
+
+    file.addEventListener('change', () => {
+      const f = file.files[0];
+      if (!f) { prev.hidden = true; return; }
+      prev.src = URL.createObjectURL(f); prev.hidden = false;
+    });
+
+    box.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const f = file.files[0];
+      if (!f) { msg.className = 'msg err'; msg.textContent = '사진을 골라 주세요.'; return; }
+      go.disabled = true; msg.className = 'msg'; msg.textContent = '사진을 줄이는 중…';
+      let path = null;
+      try {
+        const blob = await toJpegBlob(f);
+        path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+        msg.textContent = '올리는 중…';
+        const up = await fetch(`${SUPABASE_URL}/storage/v1/object/gallery/${path}`, {
+          method: 'POST',
+          headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + adminToken, 'Content-Type': 'image/jpeg', 'x-upsert': 'false' },
+          body: blob,
+        });
+        if (up.status === 401) { const e = new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.'); e.expired = true; throw e; }
+        if (!up.ok) { let m = '파일을 올리지 못했습니다.'; try { const j = await up.json(); m = j.message || j.error || m; } catch (e) {} throw new Error(m); }
+        try {
+          await api('/rest/v1/gallery', { method: 'POST', body: JSON.stringify({ title: title.value.trim(), caption: cap.value.trim() || null, category: cat.value, taken_on: date.value, photo_path: path }) });
+        } catch (e) {
+          // 목록에 못 넣었으면 올린 파일도 치움
+          try { await api(`/storage/v1/object/gallery/${path}`, { method: 'DELETE' }); } catch (e2) {}
+          throw e;
+        }
+        await load();
+        const done = document.getElementById('flash');
+        if (done) { done.className = 'msg ok'; done.textContent = '사진을 올렸습니다.'; }
+      } catch (e) {
+        msg.className = 'msg err';
+        msg.textContent = e.message;
+        if (e.expired) { const b = el('button', 'btn ghost small', '로그인하기'); b.type = 'button'; b.style.marginLeft = '10px'; b.addEventListener('click', () => topGo('#login')); msg.append(b); }
+        go.disabled = false;
+      }
+    });
+    return box;
+  }
+
+  /* ---------- 목록 ---------- */
+  async function load() {
+    adminToken = findAdminToken();
+    root.replaceChildren(el('div', 'state', '불러오는 중…'));
+    try {
+      rows = await api('/rest/v1/gallery?select=*&order=taken_on.desc,id.desc');
+    } catch (e) {
+      const box = el('div', 'state', '사진을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      const b = el('button', 'btn ghost', '다시 불러오기'); b.type = 'button'; b.addEventListener('click', load);
+      box.append(document.createElement('br'), b);
+      root.replaceChildren(box);
+      return;
+    }
+    draw();
+  }
+
+  function draw() {
+    root.replaceChildren();
+    root.append(el('p', 'intro', '함께 다녀온 성지순례와 행사의 모습을 모았습니다. 사진을 누르면 크게 볼 수 있어요.'));
+    if (adminToken) {
+      root.append(el('div', 'who-note', '관리자 모드: 사진을 올리고 지울 수 있습니다.'));
+      root.append(uploadBox());
+      const f = el('div', 'msg'); f.id = 'flash'; f.setAttribute('role', 'status'); root.append(f);
+    }
+
+    if (!rows.length) {
+      root.append(el('div', 'state', adminToken ? '아직 올린 사진이 없습니다. 위에서 첫 사진을 올려 보세요.' : '아직 올라온 사진이 없습니다. 곧 다녀온 이야기를 채워 가겠습니다.'));
+      return;
+    }
+
+    const dateWords = (s) => { const [y, m, d] = s.split('-').map(Number); return `${s} ${y}년 ${m}월 ${d}일 ${m}월${d}일`; };
+    const haystack = (r) => [r.title, r.caption, CATS[r.category], dateWords(r.taken_on)].join(' ');
+    const wrap = el('div', 'gallery');
+    const results = el('div');
+    const sb = searchBox({
+      label: '사진 검색',
+      placeholder: '예: 통도사, 해맞이, 법회, 12월',
+      onSearch: (q) => {
+        const hit = rows.filter((r) => matchesQuery(haystack(r), q));
+        sb.setInfo(q ? `"${q}" 검색 결과 ${hit.length}장` : `전체 ${rows.length}장`);
+        if (!hit.length) { results.replaceChildren(el('div', 'state', '검색 결과가 없습니다. 다른 낱말로 찾아보세요.')); return; }
+        paginate(results, [{ title: '', rows: hit }], (r) => card(r), { perPage: 6 });
+      },
+    });
+    wrap.append(sb.el, results);
+    root.append(wrap);
+    sb.setInfo(`전체 ${rows.length}장`);
+    paginate(results, [{ title: '', rows }], (r) => card(r), { perPage: 6 });
+  }
+
+  load();
+</script>
+</body>
+</html>
