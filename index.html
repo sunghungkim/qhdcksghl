@@ -45,7 +45,27 @@
 
   .pad { padding: 36px 40px 56px; overflow: auto; height: 100%; }
   .hero { max-width: 820px; display: grid; gap: 22px; margin-bottom: 36px; }
-  .hero-photo { max-height: none; height: auto; aspect-ratio: 900 / 412; background: var(--sand); }
+  /* 사진 넘기기(슬라이드) */
+  .hero-media { display: grid; gap: 8px; }
+  .carousel { position: relative; overflow: hidden; border-radius: 16px; background: var(--sand); aspect-ratio: 16 / 9; touch-action: pan-y; }
+  .slides { display: flex; height: 100%; transition: transform .7s ease; }
+  .slides.no-anim { transition: none; }
+  .slide { flex: 0 0 100%; min-width: 0; height: 100%; margin: 0; }
+  .slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+  .car-btn {
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 46px; height: 46px; border: 0; border-radius: 50%;
+    background: rgba(42,29,20,.55); color: #fff; font-size: 1.7rem; line-height: 1;
+    display: grid; place-items: center; padding: 0 0 4px; cursor: pointer;
+  }
+  .car-btn:hover { background: rgba(42,29,20,.82); }
+  .car-btn.prev { left: 10px; }
+  .car-btn.next { right: 10px; }
+  .car-dots { display: flex; justify-content: center; align-items: center; gap: 0; }
+  .car-dot { width: 26px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+  .car-dot::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #cdb995; transition: width .3s ease, background .3s ease; }
+  .car-dot[aria-current="true"]::before { width: 22px; border-radius: 5px; background: var(--brand); }
+  @media (prefers-reduced-motion: reduce) { .slides { transition: none; } }
   .hero .tag { margin: 0; color: var(--muted); font-size: 1rem; }
   .hero h2 { margin: 0; font-size: 2.1rem; color: var(--brand-dark); }
   .hero p { margin: 0; line-height: 1.8; }
@@ -101,7 +121,14 @@
     <section class="view" id="view-home">
       <div class="pad">
         <div class="hero">
-          <img class="photo hero-photo" src="images/main.jpg" alt="봉불사 법당 안, 금빛 부처님과 오색 연등이 보이는 모습">
+          <div class="hero-media">
+            <div class="carousel" id="carousel" role="group" aria-roledescription="사진 넘기기" aria-label="봉불사 사진" tabindex="0">
+              <div class="slides" id="slides"></div>
+              <button class="car-btn prev" id="car-prev" type="button" aria-label="이전 사진">‹</button>
+              <button class="car-btn next" id="car-next" type="button" aria-label="다음 사진">›</button>
+            </div>
+            <div class="car-dots" id="car-dots" role="group" aria-label="사진 고르기"></div>
+          </div>
           <p class="tag">발길 닿는 그곳에, 부처님의 향기 가득...</p>
           <h2>봉불사 · 성지순례 봉찬회</h2>
           <p>성지순례와 법회 일정을 한곳에서 확인하시고, 순례를 예약하실 수 있습니다.</p>
@@ -260,6 +287,87 @@
   }
   window.renderWho = renderWho;
   renderWho();
+
+  /* ---------- 홈 사진 넘기기 ----------
+     5초마다 왼쪽으로 한 장씩 넘어가고, 사진 아래 가운데의 작은 점과 좌우 화살표로도 넘길 수 있습니다.
+     마지막 사진 다음에는 처음 사진이 이어서 왼쪽으로 들어옵니다.
+     사진을 바꾸거나 더하려면 아래 SLIDES 목록만 고치면 됩니다. (pos = 사진이 잘릴 때 보여 줄 부분) */
+  const SLIDES = [
+    { src: 'images/main.jpg',    alt: '봉불사 법당 안, 금빛 부처님과 오색 연등이 보이는 모습', pos: '50% 50%' },
+    { src: 'images/slide-2.jpg', alt: '오색 연등 아래 법당에서 불자들이 함께 기도하는 모습',   pos: '50% 40%' },
+    { src: 'images/slide-3.jpg', alt: '법당에서 법회를 이끄는 스님의 모습',                     pos: '50% 38%' },
+  ];
+  (function initCarousel() {
+    const car = $('carousel'), track = $('slides'), dotsBox = $('car-dots');
+    const n = SLIDES.length;
+    const INTERVAL = 5000;
+    const reduceMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const slide = (s, clone) => {
+      const f = document.createElement('figure'); f.className = 'slide';
+      const im = document.createElement('img'); im.src = s.src; im.alt = clone ? '' : s.alt; im.style.objectPosition = s.pos; im.draggable = false;
+      if (clone) f.setAttribute('aria-hidden', 'true');
+      f.append(im); return f;
+    };
+    SLIDES.forEach((s) => track.append(slide(s, false)));
+    track.append(slide(SLIDES[0], true)); // 끝에 붙이는 복사본: 마지막 → 처음도 왼쪽으로 이어지게
+
+    const dots = SLIDES.map((s, k) => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'car-dot';
+      b.setAttribute('aria-label', `${k + 1}번째 사진 보기`);
+      b.addEventListener('click', () => { goTo(k); restart(); });
+      dotsBox.append(b); return b;
+    });
+
+    let idx = 0, busy = false, paused = false, timer = null, settleTimer = null;
+    const place = (i, animate) => { track.classList.toggle('no-anim', !animate); track.style.transform = `translateX(${-i * 100}%)`; };
+    const paintDots = () => dots.forEach((d, k) => d.setAttribute('aria-current', String(k === idx % n)));
+
+    function settle() { // 한 번 넘어간 뒤 정리: 복사본까지 왔으면 소리 없이 처음 사진으로 되돌림
+      clearTimeout(settleTimer);
+      if (idx === n) { idx = 0; place(0, false); }
+      busy = false;
+    }
+    function goTo(i) {
+      if (busy || i === idx) return;
+      busy = true; idx = i; place(idx, !reduceMotion); paintDots();
+      settleTimer = setTimeout(settle, reduceMotion ? 0 : 800);
+    }
+    const next = () => goTo(idx + 1);
+    function prev() {
+      if (busy) return;
+      if (idx === 0) { idx = n; place(n, false); void track.offsetWidth; } // 처음에서 뒤로 → 복사본 위치로 몰래 이동 후 한 장 뒤로
+      goTo(idx - 1);
+    }
+    track.addEventListener('transitionend', (e) => { if (e.target === track) settle(); });
+
+    function restart() {
+      clearInterval(timer);
+      if (reduceMotion) return; // 움직임 줄이기를 켠 사용자에게는 자동으로 넘기지 않음
+      timer = setInterval(() => { if (!document.hidden && !paused && car.offsetParent) next(); }, INTERVAL);
+    }
+
+    $('car-next').addEventListener('click', () => { next(); restart(); });
+    $('car-prev').addEventListener('click', () => { prev(); restart(); });
+    car.addEventListener('keydown', (e) => {
+      if (e.key === 'ArrowLeft') { prev(); restart(); } else if (e.key === 'ArrowRight') { next(); restart(); }
+    });
+    // 마우스를 올리거나 키보드로 머무는 동안에는 잠시 멈춤
+    car.addEventListener('mouseenter', () => { paused = true; });
+    car.addEventListener('mouseleave', () => { paused = false; });
+    car.addEventListener('focusin', () => { paused = true; });
+    car.addEventListener('focusout', () => { paused = false; });
+    // 휴대폰: 손가락으로 밀어서 넘기기
+    let sx = null;
+    car.addEventListener('touchstart', (e) => { sx = e.touches[0].clientX; }, { passive: true });
+    car.addEventListener('touchend', (e) => {
+      if (sx == null) return;
+      const dx = e.changedTouches[0].clientX - sx; sx = null;
+      if (Math.abs(dx) > 40) { if (dx < 0) next(); else prev(); restart(); }
+    }, { passive: true });
+
+    place(0, false); paintDots(); restart();
+  })();
 </script>
 </body>
 </html>
