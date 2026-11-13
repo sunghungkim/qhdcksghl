@@ -12,12 +12,13 @@ const SITE_SLIDES = [
   { src: 'images/slide-3.jpg', alt: '법당에서 법회를 이끄는 스님의 모습',                     pos: '50% 38%' },
 ];
 
-// 홈에만 보이는 사진 (지금은 봉찬회 문양 한 장). 한 장이면 화살표와 점 없이 그대로 보입니다.
+// 홈에만 보이는 사진 (지금은 법당의 부처님 한 장). 한 장이면 화살표와 점 없이 그대로 보입니다.
 // fit: 'contain' = 사진 전체를 자르지 않고 보여 줌 / 기본(cover) = 칸을 꽉 채우고 넘치는 부분은 잘림
+// filter: 보이는 밝기 등을 CSS 로 조정 (원본 사진 파일은 그대로). brightness(1.1) = 10% 밝게. 숫자를 키우면 더 밝아짐.
 const HOME_SLIDES = [
-  { src: 'images/emblem.png', alt: '봉찬회 문양(법륜)', pos: '50% 50%', fit: 'contain' },
+  { src: 'images/buddha.jpg', alt: '봉불사 법당의 금빛 부처님', pos: '50% 40%', filter: 'brightness(1.1)' },
 ];
-const HOME_OPTS = { aspect: '2 / 1', bg: '#efefef' }; // 칸의 가로세로 비율, 사진 옆 빈 곳의 색
+const HOME_OPTS = { aspect: '3 / 2', bg: '#efe6d6' }; // 칸의 가로세로 비율, 사진이 로딩되기 전의 바탕색
 
 function buildCarousel(slides, opts) {
   const INTERVAL = (opts && opts.interval) || 5000;
@@ -43,7 +44,7 @@ function buildCarousel(slides, opts) {
 
   const slide = (s, clone) => {
     const f = mk('figure', 'slide');
-    const im = mk('img'); im.src = s.src; im.alt = clone ? '' : (s.alt || ''); im.style.objectPosition = s.pos || '50% 50%'; if (s.fit) im.style.objectFit = s.fit; im.draggable = false;
+    const im = mk('img'); im.src = s.src; im.alt = clone ? '' : (s.alt || ''); im.style.objectPosition = s.pos || '50% 50%'; if (s.fit) im.style.objectFit = s.fit; if (s.filter) im.style.filter = s.filter; im.draggable = false;
     if (clone) f.setAttribute('aria-hidden', 'true');
     f.append(im); return f;
   };
