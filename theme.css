@@ -112,7 +112,7 @@ textarea { min-height: 96px; resize: vertical; }
 
 /* ---------- 사진 넘기기(슬라이드) — 홈, 절 소개 ---------- */
 .hero-media { display: grid; gap: 8px; }
-.carousel { position: relative; overflow: hidden; border-radius: 16px; background: var(--sand); aspect-ratio: 16 / 9; touch-action: pan-y; }
+.carousel { position: relative; overflow: hidden; border-radius: 16px; background: var(--car-bg, var(--sand)); aspect-ratio: var(--car-ratio, 16 / 9); touch-action: pan-y; }
 .slides { display: flex; height: 100%; transition: transform .7s ease; }
 .slides.no-anim { transition: none; }
 .slide { flex: 0 0 100%; min-width: 0; height: 100%; margin: 0; }

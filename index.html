@@ -254,8 +254,8 @@
   window.renderWho = renderWho;
   renderWho();
 
-  // 홈 사진 넘기기: 공용 carousel.js (절 소개와 같은 사진 목록 SITE_SLIDES 사용)
-  $('hero-carousel').replaceWith(buildCarousel(SITE_SLIDES));
+  // 홈 사진: 공용 carousel.js 의 HOME_SLIDES (지금은 봉찬회 문양 한 장). 절 소개는 별도의 SITE_SLIDES 를 씁니다.
+  $('hero-carousel').replaceWith(buildCarousel(HOME_SLIDES, HOME_OPTS));
 </script>
 </body>
 </html>

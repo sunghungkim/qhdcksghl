@@ -12,6 +12,13 @@ const SITE_SLIDES = [
   { src: 'images/slide-3.jpg', alt: '법당에서 법회를 이끄는 스님의 모습',                     pos: '50% 38%' },
 ];
 
+// 홈에만 보이는 사진 (지금은 봉찬회 문양 한 장). 한 장이면 화살표와 점 없이 그대로 보입니다.
+// fit: 'contain' = 사진 전체를 자르지 않고 보여 줌 / 기본(cover) = 칸을 꽉 채우고 넘치는 부분은 잘림
+const HOME_SLIDES = [
+  { src: 'images/emblem.png', alt: '봉찬회 문양(법륜)', pos: '50% 50%', fit: 'contain' },
+];
+const HOME_OPTS = { aspect: '2 / 1', bg: '#efefef' }; // 칸의 가로세로 비율, 사진 옆 빈 곳의 색
+
 function buildCarousel(slides, opts) {
   const INTERVAL = (opts && opts.interval) || 5000;
   const n = slides.length;
@@ -24,6 +31,8 @@ function buildCarousel(slides, opts) {
   };
 
   const wrap = mk('div', 'hero-media');
+  if (opts && opts.aspect) wrap.style.setProperty('--car-ratio', opts.aspect);
+  if (opts && opts.bg) wrap.style.setProperty('--car-bg', opts.bg);
   const car = mk('div', 'carousel', { role: 'group', 'aria-roledescription': '사진 넘기기', 'aria-label': '봉불사 사진', tabindex: '0' });
   const track = mk('div', 'slides');
   const prevBtn = mk('button', 'car-btn prev', { type: 'button', 'aria-label': '이전 사진' }); prevBtn.textContent = '‹';
@@ -34,7 +43,7 @@ function buildCarousel(slides, opts) {
 
   const slide = (s, clone) => {
     const f = mk('figure', 'slide');
-    const im = mk('img'); im.src = s.src; im.alt = clone ? '' : (s.alt || ''); im.style.objectPosition = s.pos || '50% 50%'; im.draggable = false;
+    const im = mk('img'); im.src = s.src; im.alt = clone ? '' : (s.alt || ''); im.style.objectPosition = s.pos || '50% 50%'; if (s.fit) im.style.objectFit = s.fit; im.draggable = false;
     if (clone) f.setAttribute('aria-hidden', 'true');
     f.append(im); return f;
   };
