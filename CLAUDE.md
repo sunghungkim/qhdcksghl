@@ -16,6 +16,10 @@ The site is the 성지순례 봉찬회 · 봉불사 homepage: visitors browse pi
 - The shell needs to be served over HTTP (not opened via `file://`) for the existence check to work. Any static server works, e.g. PowerShell `HttpListener` or `python -m http.server`.
 - **Backend = the owner's Supabase project** (tables: `pilgrimages`, `events`, `temple_info`, `reservations`) **plus a single Edge Function named `cafe-ai`** for the AI feature. Don't add other backends.
 
+## Photo slideshow
+
+Home and 절 소개 share one slideshow: `carousel.js` (`SITE_SLIDES` = the photo list, `buildCarousel(slides)`; auto-advances left every 5s, dots + arrows, swipe, pauses on hover) with its CSS in `theme.css`. 절 소개 appends the photo in `temple_info.image_url` as an extra last slide. Photos live in `images/`.
+
 ## Two separate logins
 
 Both are on `login.html` (side-by-side cards), opened by the header "로그인" button (`#login`; a hidden entry in the shell's `PAGES`, not in the left menu). The shell header (`renderWho()`) shows who is logged in plus logout; `menu.html` / `sales.html` still have their own admin login form as a fallback.

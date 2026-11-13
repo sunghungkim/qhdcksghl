@@ -25,6 +25,7 @@
 <body>
 <div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
 
+<script src="carousel.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -48,14 +49,13 @@
   function render(t) {
     root.replaceChildren();
 
-    // 사진: image_url 이 있으면 사진, 없으면 "사진대체" 자리 (나중에 temple_info.image_url 에 주소를 넣으면 바뀜)
+    // 사진: 홈과 같은 사진 넘기기(SITE_SLIDES). temple_info.image_url 에 적힌 사진이 있으면 맨 뒤에 한 장 더 붙음.
     // 사진 주소는 https:// 주소이거나 이 사이트의 images/ 폴더 안 파일만 허용
-    if (t.image_url && /^(https:\/\/|images\/[\w.\-]+$)/i.test(t.image_url)) {
-      const img = el('img', 'photo'); img.src = t.image_url; img.alt = t.name; root.append(img);
-    } else {
-      const ph = el('div', 'photo-ph', '사진대체'); ph.setAttribute('role', 'img'); ph.setAttribute('aria-label', '사진이 들어갈 자리');
-      root.append(ph);
+    const slides = SITE_SLIDES.slice();
+    if (t.image_url && /^(https:\/\/|images\/[\w.\-]+$)/i.test(t.image_url) && !slides.some((s) => s.src === t.image_url)) {
+      slides.push({ src: t.image_url, alt: t.name + ' 사진', pos: '50% 60%' });
     }
+    root.append(buildCarousel(slides));
 
     const card = el('section', 'card');
     card.style.display = 'grid'; card.style.gap = '18px';

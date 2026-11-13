@@ -110,6 +110,28 @@ textarea { min-height: 96px; resize: vertical; }
 .pager-gap { color: var(--muted); padding: 0 2px; }
 .pager-info { color: var(--muted); font-size: .9rem; }
 
+/* ---------- 사진 넘기기(슬라이드) — 홈, 절 소개 ---------- */
+.hero-media { display: grid; gap: 8px; }
+.carousel { position: relative; overflow: hidden; border-radius: 16px; background: var(--sand); aspect-ratio: 16 / 9; touch-action: pan-y; }
+.slides { display: flex; height: 100%; transition: transform .7s ease; }
+.slides.no-anim { transition: none; }
+.slide { flex: 0 0 100%; min-width: 0; height: 100%; margin: 0; }
+.slide img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.car-btn {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 46px; height: 46px; border: 0; border-radius: 50%;
+  background: rgba(42,29,20,.55); color: #fff; font-size: 1.7rem; line-height: 1;
+  display: grid; place-items: center; padding: 0 0 4px; cursor: pointer;
+}
+.car-btn:hover { background: rgba(42,29,20,.82); }
+.car-btn.prev { left: 10px; }
+.car-btn.next { right: 10px; }
+.car-dots { display: flex; justify-content: center; align-items: center; gap: 0; }
+.car-dot { width: 26px; height: 26px; padding: 0; border: 0; background: none; cursor: pointer; display: grid; place-items: center; }
+.car-dot::before { content: ''; width: 9px; height: 9px; border-radius: 50%; background: #cdb995; transition: width .3s ease, background .3s ease; }
+.car-dot[aria-current="true"]::before { width: 22px; border-radius: 5px; background: var(--brand); }
+@media (prefers-reduced-motion: reduce) { .slides { transition: none; } }
+
 /* ---------- 사진 자리 (나중에 실제 사진으로 교체) ---------- */
 .photo-ph {
   display: grid; place-items: center; text-align: center;
