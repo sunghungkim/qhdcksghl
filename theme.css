@@ -94,6 +94,17 @@ input, select, textarea {
 }
 textarea { min-height: 96px; resize: vertical; }
 
+/* ---------- 성지순례 전단 사진 칸 (flyers.js) ---------- */
+.flyers { margin-bottom: 22px; padding: 18px 20px; background: var(--panel); border: 1px solid var(--line); border-radius: 16px; display: grid; gap: 10px; }
+.flyers-title { margin: 0; font-size: 1.4rem; color: var(--brand-dark); }
+.flyers-hint { margin: 0; color: var(--muted); font-size: .95rem; }
+.flyers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); gap: 14px; } /* 넓으면 2장씩 나란히, 좁으면 1장씩 */
+.flyers-fig { margin: 0; display: grid; gap: 6px; }
+.flyers-fig a { display: block; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; cursor: zoom-in; }
+.flyers-fig img { display: block; width: 100%; height: auto; }
+.flyers-fig figcaption { text-align: center; color: var(--muted); font-size: .9rem; }
+@media (max-width: 760px) { .flyers { padding: 14px 12px; } .flyers-title { font-size: 1.2rem; } }
+
 /* ---------- 들어오면 뜨는 안내 팝업 (popup.js) ---------- */
 .popup-overlay {
   position: fixed; inset: 0; z-index: 200; background: rgba(30,20,12,.72); display: grid; place-items: center;

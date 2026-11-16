@@ -18,6 +18,7 @@
 <div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
 
 <script src="paging.js"></script>
+<script src="flyers.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -144,6 +145,8 @@
           ], (p, g) => card(p, g.past), { perPage: 5 });
         },
       });
+      const flyers = buildFlyerBox(); // 일정 검색 위의 전단 사진 (flyers.js 에서 바꿈)
+      if (flyers) root.append(flyers);
       root.append(sb.el, results);
       sb.setInfo(`전체 ${rows.length}건`);
       paginate(results, [
