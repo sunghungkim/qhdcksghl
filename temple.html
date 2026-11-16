@@ -92,9 +92,13 @@
     }
     root.append(buildCarousel(slides));
 
+    // 봉찬회에 대하여 (역사)를 사진 바로 아래, 연락처 카드보다 위에 둠. 글은 story.js
+    root.append(buildStory([['temple-info', '연락처 · 오시는 길']]));
+
     const card = el('section', 'card');
+    card.id = 'temple-info'; card.style.scrollMarginTop = '12px';
     card.style.display = 'grid'; card.style.gap = '18px';
-    card.append(el('h2', 'name', t.name));
+    card.append(el('h2', 'name', '봉불사 · 봉찬회'));
     if (t.intro) card.append(el('p', 'intro', t.intro));
 
     const dl = el('dl');
@@ -147,9 +151,6 @@
       card.append(act);
     }
     root.append(card);
-
-    // 봉찬회에 대하여 (역사): 연혁, 의미, 하는 일 (글은 story.js)
-    root.append(buildStory());
   }
 
   async function load() {

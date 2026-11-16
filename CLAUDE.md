@@ -18,7 +18,7 @@ The site is the 성지순례 봉찬회 · 봉불사 homepage: visitors browse pi
 
 ## 절 소개 "봉찬회에 대하여 (역사)"
 
-The history/meaning section at the bottom of `temple.html` is rendered by `story.js` (`buildStory()`); its text is static data in that file (`STORY_HISTORY`, `STORY_HANJA`/`STORY_MEANING`, `STORY_WORK`, `STORY_ABOUT`), copied from the two source documents "봉찬회에 대하여.hwp" and "봉찬회 연혁과 의미.hwp". Edit the wording there. The source documents disagreed on the start year (1984 in the narrative vs 1985 in the 연혁 list); the owner chose 1985, so both the 연혁 list and the first narrative paragraph say 1985년 (the narrative differs from the .hwp).
+On `temple.html` the order is: photo slideshow → history/meaning section → contact card (titled "봉불사 · 봉찬회", `#temple-info`). The history section is rendered by `story.js` (`buildStory(extraNav)`; its jump buttons also include a "연락처 · 오시는 길" button to the contact card); its text is static data in that file (`STORY_HISTORY`, `STORY_HANJA`/`STORY_MEANING`, `STORY_WORK`, `STORY_ABOUT`), copied from the two source documents "봉찬회에 대하여.hwp" and "봉찬회 연혁과 의미.hwp". Edit the wording there. The source documents disagreed on the start year (1984 in the narrative vs 1985 in the 연혁 list); the owner chose 1985, so both the 연혁 list and the first narrative paragraph say 1985년 (the narrative differs from the .hwp).
 
 ## Photo slideshow
 

@@ -55,7 +55,7 @@ const STORY_ABOUT = [
   ]],
 ];
 
-function buildStory() {
+function buildStory(extraNav) { // extraNav = 바로가기 버튼에 더할 [[요소 id, 버튼 글자], ...] (예: 페이지 아래쪽의 연락처 칸)
   const mk = (tag, cls, text) => {
     const e = document.createElement(tag);
     if (cls) e.className = cls;
@@ -111,9 +111,9 @@ function buildStory() {
   });
 
   const nav = mk('nav', 'story-nav'); nav.setAttribute('aria-label', '봉찬회 이야기 바로가기');
-  [['story-history', '연혁'], ['story-meaning', '의미'], ['story-work', '시작과 하는 일'], ['story-about', '봉찬회 이야기']].forEach(([id, label]) => {
+  [['story-history', '연혁'], ['story-meaning', '의미'], ['story-work', '시작과 하는 일'], ['story-about', '봉찬회 이야기']].concat(extraNav || []).forEach(([id, label]) => {
     const b = mk('button', 'btn ghost small', label); b.type = 'button';
-    b.addEventListener('click', () => { const t = story.querySelector('#' + id); if (t) t.scrollIntoView({ block: 'start' }); });
+    b.addEventListener('click', () => { const t = document.getElementById(id); if (t) t.scrollIntoView({ block: 'start' }); });
     nav.append(b);
   });
   story.append(nav);
