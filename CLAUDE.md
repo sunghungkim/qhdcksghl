@@ -2,53 +2,57 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project status
+## What this is
 
-Greenfield. The repo currently contains only `PRD.md` (the source of truth for scope) — no code, build, lint, or test setup exists yet. Read `PRD.md` before building anything, and update it when decisions in its "확인이 필요한 사항" section get resolved. Write user-facing text and docs in Korean.
+A static website for **봉찬회 · 봉불사** (a Korean Buddhist pilgrimage group and its temple). Visitors read pilgrimage/event schedules, the temple intro + history, a photo gallery, and can reserve trips; the owner (관리인) manages the same data from admin pages on the same site. **All user-facing text is Korean**, and the owner reads large, warm, easy-to-read UI as a requirement (base font 19px, warm palette in `theme.css`).
 
-The site is the 성지순례 봉찬회 · 봉불사 homepage: visitors browse pilgrimage/event schedules and the temple intro, and submit reservations; the 관리인 (admin) manages content and views reservations.
+`PRD.md` is the *original* plan (5 pages, a `cafe-ai` Edge Function, open reservation inserts). The project has outgrown it — trust this file and the code, not the PRD. The `cafe-ai` Edge Function was never built.
 
-## Hard constraints (from PRD)
+## Run / verify
 
-- **One standalone HTML file per page, no npm / no build step.** CSS and JS live in (or are CDN-linked from) each HTML file. Don't introduce bundlers, package.json, or frameworks. To preview, open the files directly or serve the folder with any static server.
-- **Menu pages**, in order: `index.html` (홈), `temple.html` (절 소개), `pilgrimage.html` (성지순례 일정), `events.html` (행사 일정), `reserve.html` (내 예약), `gallery.html` (동행의 기록 — trip/event photo gallery; admin uploads/deletes via Supabase Storage bucket `gallery` + table `gallery`, photos are resized to ≤1600px JPEG in the browser before upload). Admin editing is gated by login inside these pages — do not add a 6th admin page.
-- **`index.html` is the shell**: it owns the left tab menu (the `PAGES` array in its script) and the center area. The home content is inline; the other four pages are separate HTML files loaded into an `<iframe>` in the center. If a page's file doesn't exist yet (checked with a `HEAD` fetch), the shell shows "준비 중" — so creating e.g. `events.html` is all it takes to make that menu entry go live. Sub-pages must therefore NOT include their own menu; they are just the content. Routing is by URL hash (`#events`).
-- The shell needs to be served over HTTP (not opened via `file://`) for the existence check to work. Any static server works, e.g. PowerShell `HttpListener` or `python -m http.server`.
-- **Backend = the owner's Supabase project** (tables: `pilgrimages`, `events`, `temple_info`, `reservations`) **plus a single Edge Function named `cafe-ai`** for the AI feature. Don't add other backends.
+- **No build, no npm, no lint, no tests.** Plain HTML/CSS/JS files (only external dependency: Google Fonts via `@import` in `theme.css`). Don't introduce bundlers, `package.json`, or frameworks.
+- **Serve over HTTP, never `file://`** (the shell uses `fetch` to check pages exist): from the project folder run
+  `powershell -NoProfile -ExecutionPolicy Bypass -File serve.ps1 [-Port 8780]` → http://localhost:8780/ . It dies on reboot; Python/Node are not installed. Preview tricks: `?popup=1` forces the entry popup, `?nopopup` suppresses it.
+- In the Claude desktop preview pane, every edit auto-opens a `file://` tab that renders wrongly — close it and use the `http://localhost:8780` tab. The pane is very narrow (~270px); resize to 375px (phone) / 1280px (desktop) when judging layout.
+- Verification is by browser (JS console / screenshots). DB logic was verified with SQL `DO $$ … raise exception 'TEST …' $$` blocks, which roll back and leave no data.
 
-## 절 소개 "봉찬회에 대하여 (역사)"
+## Architecture
 
-On `temple.html` the order is: photo slideshow → history/meaning section → contact card (titled "봉불사 · 봉찬회", `#temple-info`). The history section is rendered by `story.js` (`buildStory(extraNav)`; its jump buttons also include a "연락처 · 오시는 길" button to the contact card); its text is static data in that file (`STORY_HISTORY`, `STORY_HANJA`/`STORY_MEANING`, `STORY_WORK`, `STORY_ABOUT`), copied from the two source documents "봉찬회에 대하여.hwp" and "봉찬회 연혁과 의미.hwp". Edit the wording there. The source documents disagreed on the start year (1984 in the narrative vs 1985 in the 연혁 list); the owner chose 1985, so both the 연혁 list and the first narrative paragraph say 1985년 (the narrative differs from the .hwp).
+**`index.html` is the shell**: header + left menu (becomes a top bar ≤760px) + a center area. Home content is inline; every other page is a separate HTML file loaded into an `<iframe>`, chosen by URL hash (`#temple`). The menu is the `PAGES` array in its script (a `HEAD` fetch shows "준비 중" if a file is missing; `login` is a hidden entry, not in the menu). **Sub-pages must not include their own menu.** Menu order: 홈, 절 소개 `temple.html`, 성지순례 일정 `pilgrimage.html`, 행사 일정 `events.html`, 내 예약 `reserve.html`, 동행의 기록 `gallery.html`; plus `login.html`.
 
-## Entry popup
+**Admin pages** are standalone (not in the menu; reached from header links after admin login): `menu.html` (행사 관리: add/edit pilgrimages & events, D-5 red), `sales.html` (매출), `reservations.html` (전체 예약: confirm/cancel). Each has its own top bar and a fallback admin login form.
 
-`popup.js` shows an announcement popup when `index.html` loads (`showEntryPopup(POPUP)`, called at the end of the shell script; styles `.popup-*` in `theme.css`). Everything editable lives in the `POPUP` object at the top of `popup.js` (`enabled`, `id`, `title`, `until`, `images`); the images are in `images/popup/` (currently two sample flyer images). The popup shows on every visit (closing it with "닫기 ✕"/outside click/Esc stores nothing, so it shows again next time); only the footer button "오늘 하루 보지 않기" hides it until midnight, stored in `localStorage['entry-popup-hide']` = `{id, until}`. A visitor who pressed it won't see it again that day — so when testing, use `?popup=1`. (A short-lived version used `sessionStorage` instead; `popup.js` removes that key.) Change `POPUP.id` when the content changes so earlier dismissers see it again. Preview with `?popup=1` (always shows), suppress with `?nopopup`. The content is edited by changing files (no admin UI yet).
+**Shared files** (loaded by script/link tags, no modules): `theme.css` (all tokens + shared components: cards, buttons, forms, popup, slideshow, pager, search bar, to-top button), `paging.js` (`paginate`, `searchBox`, `matchesQuery` — 5 per page on 성지순례/행사, 6 on gallery), `carousel.js` (`buildCarousel`, home photo list `HOME_SLIDES`), `popup.js` (entry popup, config object `POPUP`), `story.js` (절 소개 "봉찬회에 대하여…" text + `buildStory`), `totop.js` (`addToTopButton`, used on `temple.html`). Cross-page state lives in `sessionStorage` (`admin_token`, `member`); iframe pages read the member with `window.top.getMember()` and refresh the header with `window.top.renderWho()`. Media: `images/` (home photos `buddha`/`slide-*`/`hero.jpg`; `images/popup/` flyers; `emblem.png` is unused), `video/temple-intro.mp4`, `일정/` (original flyer photos).
 
-## "맨 위로" button
+Page-specific behaviors worth knowing:
+- **Home**: photo slideshow (8 photos, 5s auto-advance left, dots + arrows) and a two-line tagline whose 2nd line is aligned under "는" via an invisible `.tag-pad` copy of the text. The entry popup shows each visit; only its button "오늘 하루 보지 않기" hides it until midnight (`localStorage['entry-popup-hide']` = `{id, until}`); closing otherwise stores nothing. Change `POPUP.id` when the flyers change.
+- **절 소개**: intro video (autoplays muted — it has audio — with "🔇 소리 켜기", centered "↻ 다시 보기" when it ends, "▶ 재생" if autoplay is blocked) → history/meaning section (`story.js`; text copied from the owner's two `.hwp` files, with the start year deliberately set to **1985** in both places) → contact card `#temple-info` (links list `LINKS`, map embed, phone). `temple_info.image_url` is no longer used.
+- **성지순례/행사 일정**: upcoming + past groups, search, pagination; 예약하기 on a pilgrimage card needs a member login.
+- **Gallery**: admin uploads photos (resized to ≤1600px JPEG in the browser) to Storage bucket `gallery` + table `gallery`; visitors view, search, open a lightbox.
 
-`totop.js` (`addToTopButton()`, styled by `.to-top` in `theme.css`) adds a floating ↑ button that appears after scrolling down 400px and jumps straight to the top. Currently used only on `temple.html`; add the script + one call to any other long page.
+## Backend: the owner's Supabase project
 
-## Photo slideshow (home) and intro video (절 소개)
+Project ref `iixmdxfxayyjhnmngpve`; the URL and **publishable** key are hard-coded in each page (fine — RLS is the protection). The schema was applied through the Supabase connector, **not stored in this repo** (no migration files) — inspect it with the connector (`list_tables`, `execute_sql`) before changing anything, and record DB changes here.
 
-The home photo area is a slideshow: `carousel.js` (`buildCarousel(slides, opts)`; auto-advances left every 5s, dots + arrows, swipe, pauses on hover; with a single photo it just shows it, no arrows/dots) with its CSS in `theme.css`. The photo list is `HOME_SLIDES` (8 photos: the Buddha statue `images/buddha.jpg`, brightened 10% via the slide's CSS `filter`, then the 법회 photos `slide-2.jpg`, `slide-3.jpg`, `hero.jpg`, `slide-4.jpg`…`slide-7.jpg` (resized to 1600px wide); `images/emblem.png` is currently unused). The 절 소개 page does not use photos at the top any more: it shows the intro video `video/temple-intro.mp4` (`buildIntroVideo()` in `temple.html`, native `<video controls>`). It autoplays MUTED when the page opens (the video has an audio track, and browsers only allow muted autoplay), with a "🔇 소리 켜기" button; when it ends a centered "↻ 다시 보기" overlay button replays it; if the browser blocks autoplay (or prefers-reduced-motion is on) a centered "▶ 재생" button is shown instead. `temple_info.image_url` is no longer used by any page. Photos live in `images/`, the video in `video/`.
+- Tables: `pilgrimages` (… `price`, `capacity`, `remaining`, `status` open/closed/canceled), `events`, `temple_info`, `reservations` (+`status` requested/confirmed/canceled), `sales`, `members`, `member_login_failures`, `site_settings`, `gallery`; Storage bucket `gallery` (public read, admin write, ≤5MB jpg/png/webp).
+- RPCs: `member_login`, `member_check` (internal), `member_reserve`, `my_reservations`, `cancel_my_reservation` (anon-callable, SECURITY DEFINER), `record_sale`, `confirm_reservation`, `admin_cancel_reservation` (authenticated only). Triggers: `members_normalize_trg` (digits-only phone), `pilgrimages_sync_stock_trg`. The Supabase security advisor warns about the anon-callable definer functions — intentional.
 
-## Two separate logins
+## Auth model (two separate logins, both on `login.html`)
 
-Both are on `login.html` (side-by-side cards), opened by the header "로그인" button (`#login`; a hidden entry in the shell's `PAGES`, not in the left menu). The shell header (`renderWho()`) shows who is logged in plus logout; `menu.html` / `sales.html` still have their own admin login form as a fallback.
+- **Admin** = Supabase Auth email/password; token in `sessionStorage['admin_token']`. RLS treats **any `authenticated` user as admin**, so public sign-ups must stay disabled. Logout (shell or admin pages) clears it and goes to `#login`.
+- **Member** (아이디 = 이름, 비밀번호 = 전화번호) via the `member_login` RPC. **Open mode is currently ON** (`site_settings.member_login_open = 'true'`): any non-empty name+phone "logs in", so member status proves nothing yet — never gate personal data on it. To enforce the list: fill `members`, then `update site_settings set value = 'false' where key = 'member_login_open'` (then 5 wrong tries/name/10 min locks). Non-members can always browse everything.
 
-- **Admin** (Supabase Auth email/password): token kept in `sessionStorage['admin_token']`; after login the page goes to `menu.html`. RLS treats any `authenticated` user as admin, so sign-ups must stay disabled.
-- **Member open mode (currently ON)**: while `site_settings.member_login_open = 'true'`, `member_login` accepts ANY non-empty name + phone (the members list is not consulted). So being "logged in as a member" proves nothing yet — do not gate personal data on it. To enforce the members list later: fill `members`, then `update site_settings set value = 'false' where key = 'member_login_open'`.
-- **Member** (아이디 = 이름, 비밀번호 = 전화번호): when open mode is off, checked by the `member_login(p_name, p_phone)` RPC against the `members` table (anon cannot read `members` directly; phone is stored digits-only; 5 wrong tries per name in 10 min locks it). Result is kept in `sessionStorage['member']` and child pages can read it with `window.top.getMember()`. Non-members are never blocked from viewing schedules — login only unlocks member features. The members list is filled in later by the owner (Supabase dashboard / `members` table).
+## Reservations & stock
 
-## Reservations ("내 예약")
+예약하기 → `member_reserve` (name+phone from the member session; direct anon inserts into `reservations` are blocked; one active reservation per person per trip). `reserve.html` lists/cancels via `my_reservations`/`cancel_my_reservation`. `pilgrimages.remaining` (empty = unlimited) is decreased only by `record_sale` and the admin `confirm_reservation` (which refuses if seats are short); `admin_cancel_reservation` of a confirmed booking returns the seats; the sync trigger keeps `remaining` in step when `capacity` is set/changed — so counting only starts once an admin enters a trip's 정원.
 
-Clicking 예약하기 on `pilgrimage.html` calls the `member_reserve` RPC with the logged-in member's name+phone (read from `window.top.getMember()`); `reserve.html` ("내 예약") lists them via `my_reservations` and cancels via `cancel_my_reservation`. All three go through `member_check`, so they obey the same open-mode / members-list switch. Direct inserts into `reservations` by anon are blocked (the old open insert policy was dropped); one active reservation per person per trip (partial unique index); status is `requested` → `confirmed` (admin sets it in the dashboard for now) / `canceled`. Stock (`pilgrimages.remaining`, empty = unlimited) is decreased only by `record_sale` (매출) and by the admin RPC `confirm_reservation` (예약 확정, in `reservations.html` "전체 예약"); `admin_cancel_reservation` gives a confirmed reservation's seats back. A DB trigger (`pilgrimages_sync_stock`) keeps `remaining` in step when `capacity` is set/changed — so a trip only counts down once an admin has entered its 정원 in `menu.html`.
+## Conventions and gotchas
 
-## Security rules that shape the architecture
-
-- Browser code may only use the Supabase **anon/publishable** key. AI provider keys (e.g. OpenRouter) live only in Edge Function env vars, never in HTML or git.
-- RLS must be on for every table: visitors can read schedules/intro and insert reservations only; reading `reservations` (name/phone are personal data) and editing content is admin-only.
+- Render DB/user data with `textContent`/DOM builders, never `innerHTML` (every page follows this). The global `[hidden] { display: none !important }` in `theme.css` is relied on.
+- Photos/video of 법회 show congregants' faces and donor names (등 이름표); the owner has been warned — don't publish more without asking.
+- A bulk regex edit once silently deleted a whole block of the home page; after scripted multi-line edits, re-open the page and check it.
+- Editing wording: `story.js` (역사 text), `carousel.js` (`HOME_SLIDES`), `popup.js` (`POPUP`), `temple.html` (`LINKS`), `index.html` (`PAGES`, tagline).
 
 ## Git
 
-Remote `origin` is `https://github.com/sunghungkim/qhdcksghl.git` (default branch `main`). Repo-local git identity is set to 봉찬회 / qhdcksghl123@gmail.com. The remote repo may not exist yet — create it on GitHub before the first push.
+Remote `origin` = `https://github.com/sunghungkim/qhdcksghl.git`, branch `main`; repo-local identity 봉찬회 / qhdcksghl123@gmail.com. The owner asks for "커밋·push" after each change: stage the changed files by name, write the commit message in Korean (end with the Co-Authored-By line), then `git push` (Windows credential manager is already signed in). In PowerShell use a single-quoted here-string for the message and **no double quotes inside it** (that once broke the commit). The site is not deployed anywhere yet.
