@@ -22,7 +22,7 @@ On `temple.html` the order is: photo slideshow → history/meaning section → c
 
 ## Entry popup
 
-`popup.js` shows an announcement popup when `index.html` loads (`showEntryPopup(POPUP)`, called at the end of the shell script; styles `.popup-*` in `theme.css`). Everything editable lives in the `POPUP` object at the top of `popup.js` (`enabled`, `id`, `title`, `until`, `images`); the images are in `images/popup/` (currently two sample flyer images). Dismissal "오늘 하루 보지 않기" is stored in `localStorage['entry-popup-hide']` as `{id, until-midnight}` — change `POPUP.id` when the content changes so previous dismissers see it again. Preview with `?popup=1` (always shows), suppress with `?nopopup`. The content is edited by changing files (no admin UI yet).
+`popup.js` shows an announcement popup when `index.html` loads (`showEntryPopup(POPUP)`, called at the end of the shell script; styles `.popup-*` in `theme.css`). Everything editable lives in the `POPUP` object at the top of `popup.js` (`enabled`, `id`, `title`, `until`, `images`); the images are in `images/popup/` (currently two sample flyer images). The popup shows on every fresh visit (closing the tab/browser and coming back shows it again); the footer button "이번에는 보지 않기" only suppresses it for the rest of that tab's visit (`sessionStorage['entry-popup-hide']` = `{id}`), and closing with "닫기 ✕"/outside click/Esc stores nothing. (An older version stored a day-long hide in `localStorage['entry-popup-hide']`; `popup.js` now deletes that key.) Change `POPUP.id` when the content changes. Preview with `?popup=1` (always shows), suppress with `?nopopup`. The content is edited by changing files (no admin UI yet).
 
 ## "맨 위로" button
 
