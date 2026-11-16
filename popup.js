@@ -3,8 +3,8 @@
      1) 새 사진을 images/popup/ 폴더에 넣고(파일 이름은 자유),
      2) images 목록의 src 를 그 파일 이름으로 바꾸거나 줄을 더하고 빼고,
      3) id 를 새 값으로 바꿉니다. (예: '2027-01-notice')  내용이 바뀌었다는 표시입니다.
-   ▶ 동작: 홈페이지에 들어올 때마다 뜹니다. 닫았다가 다시 들어오면(탭·브라우저를 닫았다 열면) 또 뜹니다.
-     아래 "이번에는 보지 않기"를 누르면 그 탭을 닫기 전까지만 다시 뜨지 않습니다.
+   ▶ 동작: 홈페이지에 들어올 때마다 뜹니다. 위쪽 "닫기 ✕"로 닫았다가 다시 들어오면 또 뜹니다.
+     아래 "오늘 하루 보지 않기"를 누른 방문자에게만 오늘 밤 12시까지 뜨지 않습니다.
    ▶ 미리 보기: 주소 끝에 ?popup=1 을 붙이면 숨김과 상관없이 항상 뜹니다. (?nopopup 이면 안 뜹니다)
    ▶ 잠시 끄기: enabled 를 false 로.  특정 날까지만 보이게: until 에 'YYYY-MM-DD'. */
 const POPUP = {
@@ -27,17 +27,18 @@ function showEntryPopup(cfg) {
   const today = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
   if (!force && cfg.until && today() > cfg.until) return; // 표시 기간이 지남
 
-  // "이번에는 보지 않기" 기록: 이 탭을 닫기 전까지만 기억합니다(sessionStorage).
-  // → 홈페이지를 닫았다가 다시 들어오면 기록이 사라져서 팝업이 다시 뜹니다.
+  // "오늘 하루 보지 않기" 기록: 같은 내용(id)에 대해 오늘 밤 12시까지만 숨김(localStorage).
+  // 이 버튼을 누르지 않고 그냥 닫은 경우에는 아무것도 저장하지 않아서, 다시 들어오면 팝업이 또 뜹니다.
   const KEY = 'entry-popup-hide';
-  try { localStorage.removeItem(KEY); } catch (e) {} // 예전 방식("하루 동안 숨김")으로 저장된 기록이 있으면 지움
-  const readHide = () => { try { return JSON.parse(sessionStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
+  try { sessionStorage.removeItem(KEY); } catch (e) {} // 바로 전 버전("이번 방문 동안만")의 기록이 있으면 지움
+  const readHide = () => { try { return JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) { return null; } };
   if (!force) {
     const h = readHide();
-    if (h && h.id === cfg.id) return;
+    if (h && h.id === cfg.id && Date.now() < h.until) return;
   }
-  const hideThisVisit = () => {
-    try { sessionStorage.setItem(KEY, JSON.stringify({ id: cfg.id })); } catch (e) {}
+  const hideToday = () => {
+    const end = new Date(); end.setHours(24, 0, 0, 0);
+    try { localStorage.setItem(KEY, JSON.stringify({ id: cfg.id, until: end.getTime() })); } catch (e) {}
   };
 
   const mk = (tag, cls, text) => {
@@ -71,7 +72,7 @@ function showEntryPopup(cfg) {
   });
 
   const foot = mk('div', 'popup-foot');
-  const skip = mk('button', 'btn ghost', '이번에는 보지 않기'); skip.type = 'button';
+  const skip = mk('button', 'btn ghost', '오늘 하루 보지 않기'); skip.type = 'button';
   foot.append(skip); // 아래쪽에는 이 버튼 하나만. 그냥 닫기는 위쪽 "닫기 ✕", 바깥 누르기, Esc 로
 
   box.append(head, body, foot);
@@ -94,7 +95,7 @@ function showEntryPopup(cfg) {
     }
   };
   x.addEventListener('click', closeIt);
-  skip.addEventListener('click', () => { hideThisVisit(); closeIt(); });
+  skip.addEventListener('click', () => { hideToday(); closeIt(); });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeIt(); });
   document.addEventListener('keydown', onKey);
 
