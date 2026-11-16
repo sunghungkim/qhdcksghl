@@ -18,7 +18,8 @@
     padding: 32px 18px 24px; gap: 28px;
     overflow-y: auto;
   }
-  .brand { padding: 0 10px; }
+  .brand { display: block; padding: 6px 10px; margin: -6px 0; border-radius: 12px; text-decoration: none; color: inherit; cursor: pointer; }
+  .brand:hover { background: rgba(140,74,47,.1); }
   .brand .name { font-family: var(--serif); font-size: 1.7rem; font-weight: 700; color: var(--brand-dark); line-height: 1.2; }
   .brand .sub { margin-top: 6px; font-size: .95rem; color: var(--muted); }
   .nav { display: flex; flex-direction: column; gap: 6px; }
@@ -88,10 +89,11 @@
 <body>
 
 <aside class="side">
-  <div class="brand">
+  <!-- 누르면 홈 화면으로 이동하면서 페이지를 새로 고침 (스크립트 맨 아래의 brand 클릭 처리) -->
+  <a class="brand" id="brand" href="index.html" aria-label="봉불사 성지순례 봉찬회 — 홈으로 (새로 고침)">
     <div class="name">봉불사</div>
     <div class="sub">성지순례 봉찬회</div>
-  </div>
+  </a>
   <nav class="nav" id="nav" aria-label="주 메뉴"></nav>
   <div class="call">문의 및 접수<a href="tel:023878578">02-387-8578</a></div>
 </aside>
@@ -274,6 +276,16 @@
 
   // 홈 사진: carousel.js 의 HOME_SLIDES (사진 4장이 5초마다 넘어감). 절 소개 페이지는 사진 대신 동영상을 씁니다.
   $('hero-carousel').replaceWith(buildCarousel(HOME_SLIDES, HOME_OPTS));
+
+  // 왼쪽 위 "봉불사 성지순례 봉찬회"를 누르면 홈으로 이동하면서 페이지를 새로 고침.
+  // 새로 고침할 때 팝업이 또 뜨면 번거로우니 이번 한 번은 팝업을 건너뜀(popup.js 가 이 표시를 읽고 지움).
+  $('brand').addEventListener('click', (e) => {
+    if (e.ctrlKey || e.metaKey || e.shiftKey || e.button === 1) return; // 새 탭으로 여는 동작은 그대로 둠
+    e.preventDefault();
+    try { sessionStorage.setItem('popup-skip-once', '1'); } catch (err) {}
+    const target = location.pathname; // 주소 끝의 #메뉴 부분을 떼어 낸 홈 주소
+    if (location.hash) location.assign(target); else location.reload();
+  });
 
   // 들어오자마자 뜨는 안내 팝업 (사진·제목은 popup.js 의 POPUP 에서 바꿈)
   showEntryPopup(POPUP);

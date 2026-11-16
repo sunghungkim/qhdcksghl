@@ -19,6 +19,10 @@ function showEntryPopup(cfg) {
   const q = new URLSearchParams(location.search);
   if (q.has('nopopup')) return;
   const force = q.has('popup');
+  // 왼쪽 위 "봉불사" 로고를 눌러 새로 고친 직후에는 이번 한 번만 건너뜀 (index.html 이 표시를 남김)
+  let skipOnce = false;
+  try { skipOnce = sessionStorage.getItem('popup-skip-once') === '1'; sessionStorage.removeItem('popup-skip-once'); } catch (e) {}
+  if (skipOnce && !force) return;
 
   const today = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`; };
   if (!force && cfg.until && today() > cfg.until) return; // 표시 기간이 지남

@@ -33,7 +33,6 @@ function buildFlyerBox() {
     const a = mk('a'); a.href = im.src; a.target = '_blank'; a.rel = 'noopener noreferrer'; a.title = '크게 보기';
     const img = mk('img'); img.src = im.src; img.alt = im.alt || (FLYERS.title + ' ' + (i + 1)); img.loading = i === 0 ? 'eager' : 'lazy';
     a.append(img); fig.append(a);
-    if (FLYERS.images.length > 1) fig.append(mk('figcaption', null, `${i + 1} / ${FLYERS.images.length}`));
     grid.append(fig);
   });
   box.append(grid);
