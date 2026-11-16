@@ -94,6 +94,17 @@ input, select, textarea {
 }
 textarea { min-height: 96px; resize: vertical; }
 
+/* ---------- 맨 위로 버튼 (totop.js) ---------- */
+.to-top {
+  position: fixed; right: 16px; bottom: 16px; z-index: 40;
+  width: 54px; height: 54px; border: 0; border-radius: 50%;
+  background: var(--brand); color: #fff; font: 700 1.7rem/1 var(--sans);
+  display: grid; place-items: center; padding: 0 0 3px; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(42,29,20,.35);
+}
+.to-top:hover { background: var(--brand-dark); }
+@media (max-width: 760px) { .to-top { right: 12px; bottom: 12px; } }
+
 /* ---------- 검색창 ---------- */
 .searchbar { display: grid; gap: 8px; margin-bottom: 22px; padding: 18px 20px; background: var(--sand); border-radius: 16px; }
 .searchbar-label { font-weight: 700; color: var(--brand-dark); }

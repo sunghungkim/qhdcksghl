@@ -61,6 +61,7 @@
 
 <script src="carousel.js"></script>
 <script src="story.js"></script>
+<script src="totop.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -171,6 +172,7 @@
     }
   }
   load();
+  addToTopButton(); // 아래로 내려가면 나타나는 "맨 위로" 화살표 버튼
 </script>
 </body>
 </html>
