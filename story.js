@@ -67,7 +67,7 @@ function buildStory(extraNav) { // extraNav = 바로가기 버튼에 더할 [[�
 
   // 제목
   const head = mk('div', 'story-head');
-  const h = mk('h2', 'story-title', '봉찬회에 대하여 (역사)'); h.id = 'story-title';
+  const h = mk('h2', 'story-title', '봉찬회에 대하여...'); h.id = 'story-title';
   head.append(h, mk('p', 'story-sub', '불교 성지순례 봉찬회(奉讚會)'));
   story.append(head);
 
