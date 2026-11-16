@@ -70,8 +70,7 @@ function showEntryPopup(cfg) {
 
   const foot = mk('div', 'popup-foot');
   const skip = mk('button', 'btn ghost', '오늘 하루 보지 않기'); skip.type = 'button';
-  const close = mk('button', 'btn', '닫기'); close.type = 'button';
-  foot.append(skip, close);
+  foot.append(skip); // 아래쪽에는 이 버튼 하나만. 그냥 닫기는 위쪽 "닫기 ✕", 바깥 누르기, Esc 로
 
   box.append(head, body, foot);
   overlay.append(box);
@@ -93,11 +92,10 @@ function showEntryPopup(cfg) {
     }
   };
   x.addEventListener('click', closeIt);
-  close.addEventListener('click', closeIt);
   skip.addEventListener('click', () => { hideToday(); closeIt(); });
   overlay.addEventListener('click', (e) => { if (e.target === overlay) closeIt(); });
   document.addEventListener('keydown', onKey);
 
   document.body.append(overlay);
-  close.focus();
+  x.focus();
 }

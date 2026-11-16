@@ -105,7 +105,7 @@ textarea { min-height: 96px; resize: vertical; }
 .popup-fig a { display: block; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: #fff; cursor: zoom-in; }
 .popup-fig img { display: block; width: 100%; height: auto; }
 .popup-fig figcaption { text-align: center; color: var(--muted); font-size: .9rem; }
-.popup-foot { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; padding: 12px 18px; border-top: 1px solid var(--line); background: var(--panel); }
+.popup-foot { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; padding: 12px 18px; border-top: 1px solid var(--line); background: var(--panel); }
 @media (max-width: 760px) {
   .popup-overlay { padding: 8px; }
   .popup-box { max-height: calc(100vh - 16px); border-radius: 14px; }
