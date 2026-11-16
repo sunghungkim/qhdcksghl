@@ -20,6 +20,10 @@ The site is the 성지순례 봉찬회 · 봉불사 homepage: visitors browse pi
 
 On `temple.html` the order is: photo slideshow → history/meaning section → contact card (titled "봉불사 · 봉찬회", `#temple-info`). The history section is rendered by `story.js` (`buildStory(extraNav)`; its jump buttons also include a "연락처 · 오시는 길" button to the contact card); its text is static data in that file (`STORY_HISTORY`, `STORY_HANJA`/`STORY_MEANING`, `STORY_WORK`, `STORY_ABOUT`), copied from the two source documents "봉찬회에 대하여.hwp" and "봉찬회 연혁과 의미.hwp". Edit the wording there. The source documents disagreed on the start year (1984 in the narrative vs 1985 in the 연혁 list); the owner chose 1985, so both the 연혁 list and the first narrative paragraph say 1985년 (the narrative differs from the .hwp).
 
+## Entry popup
+
+`popup.js` shows an announcement popup when `index.html` loads (`showEntryPopup(POPUP)`, called at the end of the shell script; styles `.popup-*` in `theme.css`). Everything editable lives in the `POPUP` object at the top of `popup.js` (`enabled`, `id`, `title`, `until`, `images`); the images are in `images/popup/` (currently two sample flyer images). Dismissal "오늘 하루 보지 않기" is stored in `localStorage['entry-popup-hide']` as `{id, until-midnight}` — change `POPUP.id` when the content changes so previous dismissers see it again. Preview with `?popup=1` (always shows), suppress with `?nopopup`. The content is edited by changing files (no admin UI yet).
+
 ## "맨 위로" button
 
 `totop.js` (`addToTopButton()`, styled by `.to-top` in `theme.css`) adds a floating ↑ button that appears after scrolling down 400px and jumps straight to the top. Currently used only on `temple.html`; add the script + one call to any other long page.

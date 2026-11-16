@@ -139,6 +139,7 @@
 </div>
 
 <script src="carousel.js"></script>
+<script src="popup.js"></script>
 <script>
   // 메뉴 목록. file 이 있는 페이지는 파일이 실제로 존재할 때만 가운데에 열리고,
   // 없으면 "준비 중"이 보입니다. 새 페이지 파일을 만들면 자동으로 열립니다.
@@ -269,6 +270,9 @@
 
   // 홈 사진: carousel.js 의 HOME_SLIDES (사진 4장이 5초마다 넘어감). 절 소개 페이지는 사진 대신 동영상을 씁니다.
   $('hero-carousel').replaceWith(buildCarousel(HOME_SLIDES, HOME_OPTS));
+
+  // 들어오자마자 뜨는 안내 팝업 (사진·제목은 popup.js 의 POPUP 에서 바꿈)
+  showEntryPopup(POPUP);
 </script>
 </body>
 </html>
