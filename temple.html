@@ -218,6 +218,16 @@
       card.append(act);
     }
     root.append(card);
+
+    // 홈의 "연락처 · 오시는 길" 버튼으로 들어오면(주소 끝 ?to=info) 연락처 카드로 바로 내려감.
+    // 동영상이 뜨면서 위쪽 높이가 바뀌므로, 잠시 뒤에 한 번 더 맞춤.
+    if (new URLSearchParams(location.search).get('to') === 'info') {
+      const jump = () => card.scrollIntoView({ block: 'start' });
+      jump();
+      const v = root.querySelector('video');
+      if (v) v.addEventListener('loadedmetadata', jump, { once: true });
+      setTimeout(jump, 600);
+    }
   }
 
   async function load() {

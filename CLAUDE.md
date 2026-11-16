@@ -18,7 +18,7 @@ A static website for **봉찬회 · 봉불사** (a Korean Buddhist pilgrimage gr
 
 ## Architecture
 
-**`index.html` is the shell**: header + left menu (becomes a top bar ≤760px) + a center area. Home content is inline; every other page is a separate HTML file loaded into an `<iframe>`, chosen by URL hash (`#temple`). The menu is the `PAGES` array in its script (a `HEAD` fetch shows "준비 중" if a file is missing; `login` is a hidden entry, not in the menu). **Sub-pages must not include their own menu.** Menu order: 홈, 절 소개 `temple.html`, 성지순례 일정 `pilgrimage.html`, 행사 일정 `events.html`, 내 예약 `reserve.html`, 동행의 기록 `gallery.html`; plus `login.html`.
+**`index.html` is the shell**: header + left menu (becomes a top bar ≤760px) + a center area. Home content is inline; every other page is a separate HTML file loaded into an `<iframe>`, chosen by URL hash (`#temple`; a `:target` suffix passes `?to=target` to the page, e.g. `#temple:info` jumps to 절 소개's contact card — the home "연락처 · 오시는 길" button). The menu is the `PAGES` array in its script (a `HEAD` fetch shows "준비 중" if a file is missing; `login` is a hidden entry, not in the menu). **Sub-pages must not include their own menu.** Menu order: 홈, 절 소개 `temple.html`, 성지순례 일정 `pilgrimage.html`, 행사 일정 `events.html`, 내 예약 `reserve.html`, 동행의 기록 `gallery.html`; plus `login.html`.
 
 **Admin pages** are standalone (not in the menu; reached from header links after admin login): `menu.html` (행사 관리: add/edit pilgrimages & events, D-5 red), `sales.html` (매출), `reservations.html` (전체 예약: confirm/cancel). Each has its own top bar and a fallback admin login form.
 

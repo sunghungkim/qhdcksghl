@@ -113,6 +113,7 @@
           <div class="actions">
             <a class="btn" href="#pilgrimage">성지순례 일정 보기</a>
             <a class="btn ghost" href="tel:023878578">전화 문의 02-387-8578</a>
+            <a class="btn ghost" href="#temple:info">연락처 · 오시는 길</a>
           </div>
         </div>
         <h2 class="sec">바로가기</h2>
@@ -189,8 +190,10 @@
 
   let token = 0; // 메뉴를 빠르게 연속으로 눌렀을 때 마지막 클릭만 반영
   async function open() {
-    const id = location.hash.slice(1);
+    // 주소 끝에 ":목적지"를 붙이면 그 페이지의 특정 부분으로 바로 이동 (예: #temple:info = 절 소개의 연락처·오시는 길)
+    const [id, jump] = location.hash.slice(1).split(':');
     const page = PAGES.find((p) => p.id === id) || PAGES[0];
+    const to = /^[a-z-]{1,20}$/.test(jump || '') ? jump : '';
     const my = ++token;
 
     document.querySelectorAll('#nav a').forEach((a) => {
@@ -206,7 +209,7 @@
     const ok = await exists(page.file);
     if (my !== token) return;
     if (ok) {
-      $('frame').src = page.file;
+      $('frame').src = page.file + (to ? '?to=' + to : '');
       show('frame');
     } else {
       $('soon-name').textContent = page.label;
