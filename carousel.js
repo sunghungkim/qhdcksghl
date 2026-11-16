@@ -13,6 +13,10 @@ const HOME_SLIDES = [
   { src: 'images/slide-2.jpg', alt: '오색 연등 아래 법당에서 불자들이 함께 기도하는 모습',   pos: '50% 40%' },
   { src: 'images/slide-3.jpg', alt: '법당에서 법회를 이끄는 스님의 모습',                     pos: '50% 38%' },
   { src: 'images/hero.jpg',    alt: '봉불사 법회에서 불자들이 함께 기도하는 모습',           pos: '50% 60%' },
+  { src: 'images/slide-4.jpg', alt: '법당에서 스님의 법문을 듣는 불자들',                     pos: '50% 50%' },
+  { src: 'images/slide-5.jpg', alt: '법당에서 불자들이 절을 올리는 모습',                     pos: '50% 55%' },
+  { src: 'images/slide-6.jpg', alt: '오색 연등 아래 불자들이 함께 경전을 읽는 모습',         pos: '50% 50%' },
+  { src: 'images/slide-7.jpg', alt: '법회에서 스님과 함께 절하고 기도하는 불자들',           pos: '50% 50%' },
 ];
 const HOME_OPTS = { aspect: '3 / 2', bg: '#efe6d6' }; // 칸의 가로세로 비율, 사진이 로딩되기 전의 바탕색
 
