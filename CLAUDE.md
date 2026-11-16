@@ -24,9 +24,9 @@ On `temple.html` the order is: photo slideshow → history/meaning section → c
 
 `totop.js` (`addToTopButton()`, styled by `.to-top` in `theme.css`) adds a floating ↑ button that appears after scrolling down 400px and jumps straight to the top. Currently used only on `temple.html`; add the script + one call to any other long page.
 
-## Photo slideshow
+## Photo slideshow (home) and intro video (절 소개)
 
-Home and 절 소개 use one slideshow component: `carousel.js` (`buildCarousel(slides, opts)`; auto-advances left every 5s, dots + arrows, swipe, pauses on hover; with a single photo it just shows it, no arrows/dots) with its CSS in `theme.css`. Home uses `HOME_SLIDES` (currently one photo, the Buddha statue `images/buddha.jpg`, brightened 10% via the slide's CSS `filter`; `images/emblem.png` is currently unused); 절 소개 uses `SITE_SLIDES` (2 법회 photos) plus the photo in `temple_info.image_url` as an extra last slide. Photos live in `images/`.
+The home photo area is a slideshow: `carousel.js` (`buildCarousel(slides, opts)`; auto-advances left every 5s, dots + arrows, swipe, pauses on hover; with a single photo it just shows it, no arrows/dots) with its CSS in `theme.css`. The photo list is `HOME_SLIDES` (4 photos: the Buddha statue `images/buddha.jpg`, brightened 10% via the slide's CSS `filter`, then the 법회 photos `slide-2.jpg`, `slide-3.jpg`, `hero.jpg`; `images/emblem.png` is currently unused). The 절 소개 page does not use photos at the top any more: it shows the intro video `video/temple-intro.mp4` (`buildIntroVideo()` in `temple.html`, native `<video controls>`, no autoplay). `temple_info.image_url` is no longer used by any page. Photos live in `images/`, the video in `video/`.
 
 ## Two separate logins
 

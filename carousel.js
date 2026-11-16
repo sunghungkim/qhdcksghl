@@ -1,21 +1,18 @@
-/* 사진 넘기기(슬라이드) — 홈과 절 소개가 함께 씁니다.
+/* 사진 넘기기(슬라이드) — 홈 화면의 사진.
    - 5초마다 왼쪽으로 한 장씩 넘어가고, 사진 아래 가운데의 작은 점과 좌우 화살표로도 넘길 수 있습니다.
    - 마지막 사진 다음에는 처음 사진이 이어서 왼쪽으로 들어옵니다.
    - 마우스를 올리거나 키보드로 머무는 동안은 멈추고, 휴대폰에서는 손가락으로 밀어 넘길 수 있습니다.
-   사용: parent.append(buildCarousel(SITE_SLIDES))   (모양은 theme.css 의 .hero-media 부분) */
+   사용: parent.append(buildCarousel(HOME_SLIDES, HOME_OPTS))   (모양은 theme.css 의 .hero-media 부분) */
 
-// 홈과 절 소개에 같이 보이는 사진 목록. 사진을 바꾸거나 더하려면 여기만 고치면 됩니다.
+// 홈 화면에 보이는 사진 목록. 사진을 바꾸거나 더하려면 여기만 고치면 됩니다. (절 소개 페이지는 동영상을 씁니다)
 // pos = 사진이 잘릴 때 보여 줄 부분 (가로% 세로%)
-const SITE_SLIDES = [
-  { src: 'images/slide-2.jpg', alt: '오색 연등 아래 법당에서 불자들이 함께 기도하는 모습',   pos: '50% 40%' },
-  { src: 'images/slide-3.jpg', alt: '법당에서 법회를 이끄는 스님의 모습',                     pos: '50% 38%' },
-];
-
-// 홈에만 보이는 사진 (지금은 법당의 부처님 한 장). 한 장이면 화살표와 점 없이 그대로 보입니다.
 // fit: 'contain' = 사진 전체를 자르지 않고 보여 줌 / 기본(cover) = 칸을 꽉 채우고 넘치는 부분은 잘림
 // filter: 보이는 밝기 등을 CSS 로 조정 (원본 사진 파일은 그대로). brightness(1.1) = 10% 밝게. 숫자를 키우면 더 밝아짐.
 const HOME_SLIDES = [
-  { src: 'images/buddha.jpg', alt: '봉불사 법당의 금빛 부처님', pos: '50% 40%', filter: 'brightness(1.1)' },
+  { src: 'images/buddha.jpg',  alt: '봉불사 법당의 금빛 부처님',                             pos: '50% 40%', filter: 'brightness(1.1)' },
+  { src: 'images/slide-2.jpg', alt: '오색 연등 아래 법당에서 불자들이 함께 기도하는 모습',   pos: '50% 40%' },
+  { src: 'images/slide-3.jpg', alt: '법당에서 법회를 이끄는 스님의 모습',                     pos: '50% 38%' },
+  { src: 'images/hero.jpg',    alt: '봉불사 법회에서 불자들이 함께 기도하는 모습',           pos: '50% 60%' },
 ];
 const HOME_OPTS = { aspect: '3 / 2', bg: '#efe6d6' }; // 칸의 가로세로 비율, 사진이 로딩되기 전의 바탕색
 

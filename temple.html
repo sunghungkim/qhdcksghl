@@ -31,6 +31,11 @@
   .story-h4 { margin: 10px 0 0; font-size: 1.15rem; font-family: var(--sans); color: var(--brand); }
   .prose { margin: 0; line-height: 2; font-size: 1.02rem; word-break: keep-all; overflow-wrap: break-word; }
 
+  /* 절 소개 동영상 */
+  .video-box { border-radius: 16px; overflow: hidden; background: #000; }
+  .video-box video { display: block; width: 100%; max-height: 80vh; background: #000; }
+  .video-box .vfail { padding: 40px 16px; text-align: center; color: #fff; }
+
   /* 연혁: 세로 시간 순서 */
   .timeline { list-style: none; margin: 4px 0 0; padding: 0 0 0 6px; }
   .timeline li { position: relative; display: grid; grid-template-columns: 5.2rem 1fr; gap: 4px 14px; padding: 0 0 20px 24px; border-left: 3px solid var(--line); }
@@ -59,7 +64,6 @@
 <body>
 <div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
 
-<script src="carousel.js"></script>
 <script src="story.js"></script>
 <script src="totop.js"></script>
 <script>
@@ -82,16 +86,29 @@
     return e;
   }
 
+  // 절 소개 동영상 파일. 다른 동영상으로 바꾸려면 video 폴더의 파일을 바꾸거나 이 주소를 고치면 됩니다.
+  const VIDEO_SRC = 'video/temple-intro.mp4';
+
+  function buildIntroVideo() {
+    const box = el('div', 'video-box');
+    const v = document.createElement('video');
+    v.controls = true;              // 재생·정지·소리·전체화면 조절
+    v.playsInline = true;           // 휴대폰에서 화면 안에서 재생
+    v.preload = 'metadata';         // 처음에는 첫 화면만 불러오고, 누르면 재생
+    v.setAttribute('aria-label', '봉불사 절 소개 동영상');
+    const s = document.createElement('source');
+    s.src = VIDEO_SRC; s.type = 'video/mp4';
+    s.addEventListener('error', () => { box.replaceChildren(el('div', 'vfail', '동영상을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.')); });
+    v.append(s, '이 브라우저에서는 동영상을 재생할 수 없습니다.');
+    box.append(v);
+    return box;
+  }
+
   function render(t) {
     root.replaceChildren();
 
-    // 사진: 홈과 같은 사진 넘기기(SITE_SLIDES). temple_info.image_url 에 적힌 사진이 있으면 맨 뒤에 한 장 더 붙음.
-    // 사진 주소는 https:// 주소이거나 이 사이트의 images/ 폴더 안 파일만 허용
-    const slides = SITE_SLIDES.slice();
-    if (t.image_url && /^(https:\/\/|images\/[\w.\-]+$)/i.test(t.image_url) && !slides.some((s) => s.src === t.image_url)) {
-      slides.push({ src: t.image_url, alt: t.name + ' 사진', pos: '50% 60%' });
-    }
-    root.append(buildCarousel(slides));
+    // 사진 자리: 절 소개 동영상 (사진들은 홈 화면에서 넘어가며 보입니다)
+    root.append(buildIntroVideo());
 
     // 봉찬회에 대하여 (역사)를 사진 바로 아래, 연락처 카드보다 위에 둠. 글은 story.js
     root.append(buildStory([['temple-info', '연락처 · 오시는 길']]));
