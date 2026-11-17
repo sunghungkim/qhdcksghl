@@ -171,17 +171,17 @@
     stock.append('예약 신청 ' + fmtStamp(r.created_at) + ' · 이 일정 남은 자리: ');
     stock.append(el('b', null, p.remaining == null ? '제한 없음' : p.remaining + '명'));
     item.append(stock);
-    if (r.status === 'canceled' && r.canceled_reason === 'timeout') item.append(el('p', 'hint', '※ 예약 후 2시간 안에 입금 확인이 되지 않아 자동 취소되었습니다.'));
+    if (r.status === 'canceled' && r.canceled_reason === 'timeout') item.append(el('p', 'hint', '※ 예약 후 2시간 안에 입금 확인이 되지 않아 자동 취소되었습니다. 이후 입금이 확인되면 아래 [다시 확정] 을 누르세요.'));
     else if (r.status === 'requested') item.append(el('p', 'hint', '※ 예약 후 2시간 안에 확정하지 않으면 자동 취소됩니다. (' + fmtStamp(new Date(new Date(r.created_at).getTime() + 7200000).toISOString()) + ' 까지)'));
     if (r.note) item.append(el('p', 'desc', '요청사항: ' + r.note));
 
     const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
     if (flash) { msg.className = 'msg ok'; msg.textContent = flash; }
 
-    if (r.status === 'requested' || r.status === 'confirmed') {
+    if (['requested', 'confirmed', 'canceled'].includes(r.status)) {
       const act = el('div', 'actions');
-      if (r.status === 'requested') {
-        const ok = el('button', 'btn small', '예약 확정'); ok.type = 'button';
+      if (r.status !== 'confirmed') {
+        const ok = el('button', 'btn small', r.status === 'canceled' ? '다시 확정 (입금 확인)' : '예약 확정'); ok.type = 'button';
         ok.addEventListener('click', async () => {
           ok.disabled = true; msg.className = 'msg'; msg.textContent = '확정하는 중…';
           try {
@@ -189,7 +189,7 @@
             if (res.ok) { await reload(`${r.name}님 예약을 확정했습니다. 남은 자리 ${res.remaining == null ? '제한 없음' : res.remaining + '명'}`); return; }
             msg.className = 'msg err';
             msg.textContent = res.reason === 'full' ? '남은 자리가 부족해 확정할 수 없습니다. (행사 관리에서 정원을 확인해 주세요)'
-              : res.reason === 'expired' ? '예약 후 2시간이 지나 자동 취소된 예약입니다. 목록을 새로 불러옵니다.'
+              : res.reason === 'duplicate' ? '같은 분이 이 일정을 이미 다시 예약해 두었습니다. 그 예약을 확정해 주세요.'
               : res.reason === 'bad_status' ? '이미 처리된 예약입니다. 목록을 새로 불러옵니다.' : '확정하지 못했습니다.';
             if (res.reason === 'bad_status' || res.reason === 'expired') setTimeout(reload, 1200);
           } catch (e) { msg.className = 'msg err'; msg.textContent = '확정하지 못했습니다: ' + e.message; }
@@ -215,7 +215,7 @@
         });
         act.append(ask, yes, no);
       });
-      act.append(cancel);
+      if (r.status !== 'canceled') act.append(cancel);
       item.append(act);
     }
     item.append(msg);
