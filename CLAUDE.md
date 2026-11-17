@@ -48,6 +48,7 @@ Project ref `iixmdxfxayyjhnmngpve`; the URL and **publishable** key are hard-cod
 
 ## Conventions and gotchas
 
+- Korean line breaks: `theme.css` sets `word-break: keep-all` (break only at spaces) + `text-wrap: pretty/balance` for every page; don't override per page unless a long URL needs `overflow-wrap: anywhere`.
 - Render DB/user data with `textContent`/DOM builders, never `innerHTML` (every page follows this). The global `[hidden] { display: none !important }` in `theme.css` is relied on.
 - Photos/video of 법회 show congregants' faces and donor names (등 이름표); the owner has been warned — don't publish more without asking.
 - A bulk regex edit once silently deleted a whole block of the home page; after scripted multi-line edits, re-open the page and check it.

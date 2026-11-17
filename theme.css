@@ -21,6 +21,10 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 html { font-size: 19px; }
+/* 한글은 낱말(띄어쓰기) 단위로 줄이 바뀌게: "봉불사 행사 일정을 / 확인하세요" 처럼. 아주 긴 낱말(주소 등)만 어쩔 수 없이 끊음 */
+body { word-break: keep-all; overflow-wrap: break-word; }
+h1, h2, h3, .desc, .hint, .state, .msg, p { text-wrap: pretty; }
+h1, h2, h3 { text-wrap: balance; }
 body {
   margin: 0;
   font-family: var(--sans);
