@@ -45,6 +45,7 @@
 
 <main id="root"></main>
 
+<script src="paging.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 예약 조회·확정은 로그인한 관리인만 가능합니다(DB의 RLS 규칙).
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -56,6 +57,7 @@
   let token = null;
   try { token = sessionStorage.getItem('admin_token'); } catch (e) {}
   let rows = [];
+  let query = '', searchUi = null, listBox = null;
   let tab = 'requested';
 
   function el(tag, cls, text) {
@@ -252,22 +254,47 @@
       const n = key === 'all' ? rows.length : count(key);
       const b = el('button', null, `${label} ${n}`); b.type = 'button';
       b.setAttribute('aria-pressed', String(tab === key));
-      b.addEventListener('click', () => { tab = key; flashFor = null; draw(); });
+      b.addEventListener('click', () => { tab = key; pageNo = 1; flashFor = null; draw(); });
       tabs.append(b);
     });
     root.append(tabs);
 
+    // 검색창은 한 번만 만들어 계속 씁니다 (글자를 칠 때마다 다시 그려도 입력이 끊기지 않게)
+    if (!searchUi) {
+      searchUi = searchBox({
+        label: '예약 검색',
+        placeholder: '이름, 전화번호(뒷자리도 가능), 일정, 탑승지',
+        onSearch: (q) => { query = q; pageNo = 1; drawList(); },
+      });
+    }
+    root.append(searchUi.el);
+    listBox = el('div');
+    root.append(listBox);
+    drawList();
+  }
+
+  // 검색어로 찾을 글자: 이름, 전화번호(숫자·하이픈), 일정, 장소, 탑승지, 함께 가시는 분, 상태
+  function haystack(r) {
+    const p = r.pilgrimages || {};
+    const comp = (Array.isArray(r.companions) ? r.companions : []).map((c) => c.name + ' ' + c.phone + ' ' + fmtPhone(c.phone)).join(' ');
+    return [r.name, r.phone, fmtPhone(r.phone), p.title, p.place, r.boarding, comp, STATUS[r.status]].join(' ');
+  }
+
+  let pageNo = 1;
+  function drawList() {
     // 일정 날짜 순, 같은 날이면 신청 순
-    const list = rows.filter((r) => tab === 'all' || r.status === tab)
+    const byTab = rows.filter((r) => tab === 'all' || r.status === tab);
+    const list = byTab.filter((r) => matchesQuery(haystack(r), query))
       .sort((a, b) => ((a.pilgrimages && a.pilgrimages.trip_date) || '').localeCompare((b.pilgrimages && b.pilgrimages.trip_date) || '') || a.id - b.id);
+    searchUi.setInfo(query ? `"${query}" 검색 결과 ${list.length}건 (위에서 고른 상태 안에서 찾습니다)` : '');
 
     if (!list.length) {
-      root.append(el('div', 'state', tab === 'requested' ? '확정을 기다리는 예약이 없습니다.' : '해당하는 예약이 없습니다.'));
+      listBox.replaceChildren(el('div', 'state', query ? '검색 결과가 없습니다. 다른 이름·전화번호로 찾거나, 위에서 "전체"를 눌러 보세요.'
+        : tab === 'requested' ? '확정을 기다리는 예약이 없습니다.' : '해당하는 예약이 없습니다.'));
       return;
     }
-    const box = el('div', 'list');
-    list.forEach((r) => box.append(card(r)));
-    root.append(box);
+    // 한 페이지에 5개씩 (처리 후 다시 그려도 보던 페이지 유지)
+    paginate(listBox, [{ title: '', rows: list }], (r) => card(r), { perPage: 5, startPage: pageNo, onPage: (n) => { pageNo = n; } });
   }
 
   render();
