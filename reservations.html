@@ -162,6 +162,7 @@
     if (r.boarding) meta.append(el('span', null, '🚌 ' + r.boarding));
     if (p.price != null) meta.append(el('span', null, '💰 ' + (p.price === 0 ? '무료' : won(p.price * r.people))));
     item.append(meta);
+    if (Array.isArray(r.companions) && r.companions.length) item.append(el('p', 'desc', '함께 가시는 분: ' + r.companions.map((c) => c.name + ' (' + c.phone + ')').join(', ')));
 
     const stock = el('div', 'stockline');
     stock.append('예약 신청 ' + fmtStamp(r.created_at) + ' · 이 일정 남은 자리: ');

@@ -13,6 +13,8 @@
   .people input { width: 5.2rem; min-height: 48px; text-align: center; }
   .reserve-panel { display: grid; gap: 14px; margin-top: 4px; padding: 16px; background: var(--sand); border-radius: 12px; }
   .reserve-id { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .reserve-comp { display: grid; gap: 12px; }
+  .reserve-panel input[readonly] { background: #efe8da; color: var(--muted); }
   .reserve-sub { font-weight: 700; }
   .stops { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .stop { display: grid; gap: 2px; text-align: center; padding: 12px 10px; min-height: 64px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
@@ -80,12 +82,14 @@
   function reserveBox(p) {
     const stops = stopsOf(p);
     const box = el('div', 'reserve-box');
-    const open = el('button', 'btn', '예약하기'); open.type = 'button';
+    const open = el('button', 'btn', '예약 신청서 쓰기'); open.type = 'button';
     open.setAttribute('aria-expanded', 'false');
     box.append(open);
 
     const panel = el('div', 'reserve-panel'); panel.hidden = true;
     const m0 = currentMember();
+    const gate = el('div', 'msg'); gate.setAttribute('role', 'status');
+    box.append(gate);
 
     const mkField = (labelText, type, value, ph, ac) => {
       const l = el('label', 'f', labelText);
@@ -95,16 +99,27 @@
       l.append(i);
       return [l, i];
     };
-    const [nameL, nameI] = mkField('이름', 'text', m0 && m0.name, '예: 홍길동', 'name');
-    const [phoneL, phoneI] = mkField('전화번호', 'tel', m0 && m0.phone, '예: 010-1234-5678', 'tel');
-    nameI.maxLength = 50;
+    // 순서: ① 인원 → ② 이름·전화번호 → ③ 차량 탑승지 → 예약하기
+    panel.append(el('div', 'reserve-sub', '① 인원을 먼저 정해 주세요'));
+    const lab = el('label', 'people', '인원 ');
+    const num = el('input'); num.type = 'number'; num.min = 1; num.max = 100; num.step = 1; num.value = 1;
+    num.setAttribute('aria-label', '예약 인원(명)');
+    lab.append(num, document.createTextNode(' 명'));
+    panel.append(lab);
+    // 1번째 분 = 로그인한 회원 본인 (고칠 수 없음)
+    panel.append(el('div', 'reserve-sub', '② 이름과 전화번호 (1번째 분은 로그인한 회원)'));
+    const [nameL, nameI] = mkField('이름', 'text', m0 && m0.name, '', 'name');
+    const [phoneL, phoneI] = mkField('전화번호', 'tel', m0 && m0.phone, '', 'tel');
+    nameI.readOnly = true; phoneI.readOnly = true;
     const idRow = el('div', 'reserve-id'); idRow.append(nameL, phoneL);
     panel.append(idRow);
+    const comp = el('div', 'reserve-comp'); // 인원이 2명 이상이면 동행하시는 분 칸이 생깁니다
+    panel.append(comp);
 
     // 차량 탑승지 버튼 (장소 + 탑승시간)
     let chosen = null;
     if (stops.length) {
-      panel.append(el('div', 'reserve-sub', '차량 탑승지를 눌러 선택하세요'));
+      panel.append(el('div', 'reserve-sub', '③ 차량 탑승지를 눌러 선택하세요'));
       const grp = el('div', 'stops'); grp.setAttribute('role', 'radiogroup'); grp.setAttribute('aria-label', '차량 탑승지');
       stops.forEach((s) => {
         const b = el('button', 'stop');
@@ -119,68 +134,87 @@
       panel.append(grp);
     }
 
-    const row = el('div', 'actions');
-    const lab = el('label', 'people', '인원 ');
-    const num = el('input'); num.type = 'number'; num.min = 1; num.max = 100; num.step = 1; num.value = 1;
-    num.setAttribute('aria-label', '예약 인원(명)');
-    lab.append(num, document.createTextNode(' 명'));
-    const b = el('button', 'btn', '예약 신청'); b.type = 'button';
-    row.append(lab, b);
+    const b = el('button', 'btn', '예약하기'); b.type = 'button';
+    const row = el('div', 'actions'); row.append(b);
     const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
     panel.append(row, msg);
     box.append(panel);
 
-    open.addEventListener('click', () => {
-      panel.hidden = !panel.hidden;
-      open.setAttribute('aria-expanded', String(!panel.hidden));
-      open.textContent = panel.hidden ? '예약하기' : '예약창 닫기';
-      if (!panel.hidden && !nameI.value) nameI.focus();
-    });
+    // 인원 수에 맞춰 동행인(2번째 분부터) 이름·전화번호 칸을 만들고 줄입니다 (이미 쓴 내용은 남김)
+    const compInputs = [];
+    const syncComp = () => {
+      const n = Math.max(1, Math.min(100, Math.floor(Number(num.value)) || 1));
+      while (compInputs.length < n - 1) {
+        const k = compInputs.length + 2;
+        const wrap = el('div', 'reserve-id');
+        const [l1, i1] = mkField(k + '번째 분 이름', 'text', '', '예: 홍길동');
+        const [l2, i2] = mkField(k + '번째 분 전화번호', 'tel', '', '예: 010-1234-5678');
+        i1.maxLength = 50;
+        wrap.append(l1, l2);
+        compInputs.push({ wrap, name: i1, phone: i2 });
+      }
+      while (compInputs.length > n - 1) compInputs.pop();
+      comp.replaceChildren(...compInputs.map((c) => c.wrap));
+    };
+    num.addEventListener('input', syncComp);
+    num.addEventListener('change', syncComp);
 
     const say = (text, kind, linkText, hash) => {
-      msg.className = 'msg' + (kind ? ' ' + kind : '');
-      msg.replaceChildren(text);
+      const target = panel.hidden ? gate : msg;
+      target.className = 'msg' + (kind ? ' ' + kind : '');
+      target.replaceChildren(text);
       if (linkText) {
         const a = el('button', 'btn ghost small', linkText); a.type = 'button';
         a.style.marginLeft = '10px';
         a.addEventListener('click', () => topGo(hash));
-        msg.append(a);
+        target.append(a);
       }
     };
 
+    open.addEventListener('click', () => {
+      if (panel.hidden) {
+        if (!currentMember()) { say('예약은 회원 로그인 후에 할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
+        const mm = currentMember();
+        nameI.value = mm.name; phoneI.value = mm.phone;
+        gate.replaceChildren();
+        panel.hidden = false;
+      } else panel.hidden = true;
+      open.setAttribute('aria-expanded', String(!panel.hidden));
+      open.textContent = panel.hidden ? '예약 신청서 쓰기' : '신청서 닫기';
+    });
+
     b.addEventListener('click', async () => {
-      const name = nameI.value.trim();
-      const phone = phoneI.value.trim();
-      if (!name) { say('이름을 입력해 주세요.', 'err'); nameI.focus(); return; }
-      if (phone.replace(/\D/g, '').length < 9) { say('전화번호를 정확히 입력해 주세요.', 'err'); phoneI.focus(); return; }
+      const m = currentMember();
+      if (!m) { panel.hidden = true; open.textContent = '예약 신청서 쓰기'; say('예약은 회원 로그인 후에 할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
+      const name = m.name, phone = m.phone;
       if (stops.length && !chosen) { say('차량 탑승지를 선택해 주세요.', 'err'); return; }
       const people = Number(num.value);
       if (!Number.isInteger(people) || people < 1 || people > 100) { say('인원은 1명 이상으로 입력해 주세요.', 'err'); return; }
+      syncComp();
+      const companions = [];
+      for (let i = 0; i < compInputs.length; i++) {
+        const c = compInputs[i], nm = c.name.value.trim(), ph = c.phone.value.trim();
+        if (!nm) { say((i + 2) + '번째 분 이름을 입력해 주세요.', 'err'); c.name.focus(); return; }
+        if (ph.replace(/\D/g, '').length < 9) { say((i + 2) + '번째 분 전화번호를 정확히 입력해 주세요.', 'err'); c.phone.focus(); return; }
+        companions.push({ name: nm, phone: ph });
+      }
       b.disabled = true; say('예약하는 중…');
       try {
         const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_reserve`, {
           method: 'POST',
           headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_name: name, p_phone: phone, p_pilgrimage_id: p.id, p_people: people, p_boarding: chosen }),
+          body: JSON.stringify({ p_name: name, p_phone: phone, p_pilgrimage_id: p.id, p_people: people, p_boarding: chosen, p_companions: companions }),
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const r = await res.json();
-        if (r.ok) {
-          // 아직 로그인하지 않았다면 방금 입력한 이름·전화번호로 로그인된 것으로 둡니다 (내 예약에서 바로 보이도록)
-          try {
-            if (!currentMember()) {
-              sessionStorage.setItem('member', JSON.stringify({ name, phone }));
-              if (window.top.renderWho) window.top.renderWho();
-            }
-          } catch (e) {}
-          say('예약되었습니다.' + (chosen ? ' 탑승지: ' + chosen + '.' : '') + ' 내 예약에 추가했어요.', 'ok', '내 예약 보기', '#reserve');
-        }
+        if (r.ok) say('예약되었습니다.' + (chosen ? ' 탑승지: ' + chosen + '.' : '') + ' 내 예약에 추가했어요.', 'ok', '내 예약 보기', '#reserve');
         else if (r.reason === 'duplicate') say('이미 예약하신 일정입니다.', 'err', '내 예약 보기', '#reserve');
         else if (r.reason === 'closed') say('마감되었거나 지난 일정입니다.', 'err');
         else if (r.reason === 'full') say('남은 자리가 부족합니다.', 'err');
         else if (r.reason === 'need_boarding') say('차량 탑승지를 선택해 주세요.', 'err');
+        else if (r.reason === 'need_companions') say('인원 수에 맞게 모든 분의 이름과 전화번호를 입력해 주세요.', 'err');
         else if (r.reason === 'locked') say('잠시 막혔습니다. 10분 뒤에 다시 시도해 주세요.', 'err');
-        else say('회원으로 확인되지 않았습니다. 이름과 전화번호를 다시 확인해 주세요.', 'err');
+        else say('로그인 정보를 확인해 주세요.', 'err', '로그인하기', '#login');
       } catch (e) {
         say('예약하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');
       }

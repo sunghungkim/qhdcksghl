@@ -71,6 +71,7 @@
     if (r.boarding) meta.append(el('span', null, '🚌 ' + r.boarding));
     if (r.price != null) meta.append(el('span', null, '💰 ' + (r.price === 0 ? '무료' : won(r.price * r.people) + ' (1인 ' + won(r.price) + ')')));
     item.append(meta);
+    if (Array.isArray(r.companions) && r.companions.length) item.append(el('p', 'desc', '함께 가시는 분: ' + r.companions.map((c) => c.name + ' (' + c.phone + ')').join(', ')));
     item.append(el('p', 'hint', '예약 신청: ' + fmtStamp(r.created_at)));
 
     if (r.status === 'requested' && !past) {
