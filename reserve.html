@@ -131,22 +131,20 @@
       // 입금 완료: 입금하셨다고 알리는 버튼. 누르면 "입금 대기" → "예약 접수" 로 바뀌고, 관리자가 확인해 확정합니다.
       const pd = el('button', 'btn small', '입금 완료'); pd.type = 'button';
       const b = el('button', 'btn ghost small', '예약 취소'); b.type = 'button';
-      pd.addEventListener('click', () => {
-        pd.hidden = true; b.hidden = true;
-        const ask = el('span', null, '입금을 완료하셨나요? 누른 뒤에는 직접 취소할 수 없습니다. ');
-        const yes = el('button', 'btn small', '예, 입금했습니다'); yes.type = 'button';
-        const no = el('button', 'btn ghost small', '아니요'); no.type = 'button';
-        no.addEventListener('click', () => { ask.remove(); yes.remove(); no.remove(); pd.hidden = false; b.hidden = false; });
-        yes.addEventListener('click', async () => {
-          yes.disabled = true; msg.className = 'msg'; msg.textContent = '접수하는 중…';
-          try {
-            const res = await rpc('mark_reservation_paid', { p_name: m.name, p_phone: m.phone, p_id: r.id });
-            if (res.ok) { load(); return; }
-            msg.className = 'msg err'; msg.textContent = '처리할 수 없는 예약입니다. 목록을 새로 불러옵니다.'; setTimeout(load, 1200);
-          } catch (e) { msg.className = 'msg err'; msg.textContent = '접수하지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
-          yes.disabled = false;
+      pd.addEventListener('click', async () => {
+        const yes = await askPopup({
+          heading: '입금을 완료하셨나요?',
+          message: '입금 완료를 누른 뒤에는 직접 취소할 수 없습니다.',
+          yes: '예, 입금했습니다', no: '아니요',
         });
-        act.append(ask, yes, no);
+        if (!yes) return;
+        pd.disabled = true; b.disabled = true; msg.className = 'msg'; msg.textContent = '접수하는 중…';
+        try {
+          const res = await rpc('mark_reservation_paid', { p_name: m.name, p_phone: m.phone, p_id: r.id });
+          if (res.ok) { load(); return; }
+          msg.className = 'msg err'; msg.textContent = '처리할 수 없는 예약입니다. 목록을 새로 불러옵니다.'; setTimeout(load, 1200);
+        } catch (e) { msg.className = 'msg err'; msg.textContent = '접수하지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+        pd.disabled = false; b.disabled = false;
       });
       act.append(pd);
       b.addEventListener('click', () => {

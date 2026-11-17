@@ -80,3 +80,41 @@ function showPayPopup(opts) {
   ok.focus();
   return { close };
 }
+
+/* 확인 팝업: askPopup({ heading, message, yes, no }) → Promise<true|false>
+   "예" 를 누르면 true, "아니요"·바깥 누르기·Esc 는 false. (잘못 눌러도 안전하도록 처음에는 "아니요"에 초점이 있음) */
+function askPopup(opts) {
+  opts = opts || {};
+  const mk = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  return new Promise((resolve) => {
+    const overlay = mk('div', 'popup-overlay');
+    const box = mk('div', 'popup-box ask-box');
+    box.setAttribute('role', 'alertdialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'ask-title'); box.setAttribute('aria-describedby', 'ask-msg');
+    const head = mk('div', 'popup-head');
+    const title = mk('h2', 'popup-title', opts.heading || '확인해 주세요'); title.id = 'ask-title';
+    head.append(title);
+    const body = mk('div', 'popup-body');
+    const msg = mk('p', 'ask-msg', opts.message || ''); msg.id = 'ask-msg';
+    body.append(msg);
+    const foot = mk('div', 'popup-foot');
+    const no = mk('button', 'btn ghost', opts.no || '아니요'); no.type = 'button';
+    const yes = mk('button', 'btn', opts.yes || '예'); yes.type = 'button';
+    foot.append(no, yes);
+    box.append(head, body, foot); overlay.append(box);
+
+    const prev = document.activeElement;
+    const done = (v) => { document.removeEventListener('keydown', onKey); overlay.remove(); if (prev && prev.focus) { try { prev.focus(); } catch (e) {} } resolve(v); };
+    const onKey = (e) => { if (e.key === 'Escape') done(false); };
+    yes.addEventListener('click', () => done(true));
+    no.addEventListener('click', () => done(false));
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) done(false); });
+    document.addEventListener('keydown', onKey);
+    document.body.append(overlay);
+    no.focus();
+  });
+}
