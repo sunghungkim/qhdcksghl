@@ -1,7 +1,7 @@
 /* 입금 안내 팝업 (성지순례 일정 · 내 예약 공용)
    ▶ 계좌를 바꾸려면 아래 ACCOUNTS 만 고치세요. copy 는 "복사" 버튼으로 복사될 숫자(공백·하이픈 없음)입니다.
    ▶ 사용: showPayPopup({ heading, trip, amount, hideMine })
-        heading  팝업 제목 (예: '예약이 접수되었습니다')   trip  예약 한 줄 설명(없으면 생략)
+        heading  팝업 제목 (예: '입금 계좌 안내')   trip  예약 한 줄 설명(없으면 생략)
         amount   입금하실 금액 글자(없으면 생략)             hideMine  true 면 "내 예약 보기" 버튼을 숨김 */
 const ACCOUNTS = [
   { bank: '국민은행', shown: '910 6627 8859', copy: '91066278859', owner: '박소희' },
@@ -58,7 +58,7 @@ function showPayPopup(opts) {
     row.append(info, c);
     body.append(row);
   });
-  body.append(mk('p', 'pay-note', '입금이 완료되면 입금 확인 후 예약이 확정됩니다. 확정된 예약의 취소는 전화(02-387-8578)로 문의해 주세요.'));
+  body.append(mk('p', 'pay-note', '입금하신 뒤 "내 예약"에서 [입금 완료] 버튼을 눌러 주세요. 관리자가 입금을 확인하면 예약이 확정됩니다. 확정된 예약의 취소는 전화(02-387-8578)로 문의해 주세요.'));
 
   const foot = mk('div', 'popup-foot');
   const ok = mk('button', 'btn', '확인'); ok.type = 'button';

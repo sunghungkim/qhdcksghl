@@ -83,7 +83,7 @@
 
   function payInfo(p, people, boarding) {
     return {
-      heading: '예약이 접수되었습니다',
+      heading: '예약 신청이 되었습니다 (입금 대기)',
       trip: p.title + ' · ' + fmtDate(p.trip_date) + ' · ' + people + '명' + (boarding ? ' · ' + boarding : ''),
       amount: p.price != null && p.price > 0 ? (p.price * people).toLocaleString('ko-KR') + '원 (1인 ' + Number(p.price).toLocaleString('ko-KR') + '원)' : '',
     };
@@ -223,7 +223,7 @@
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const r = await res.json();
         if (r.ok) {
-          say('예약이 접수되었습니다. 입금 확인 후 예약이 확정됩니다.' + (chosen ? ' (탑승지: ' + chosen + ')' : ''), 'ok', '내 예약 보기', '#reserve');
+          say('예약 신청이 되었습니다. 입금하신 뒤 내 예약에서 [입금 완료]를 눌러 주세요.' + (chosen ? ' (탑승지: ' + chosen + ')' : ''), 'ok', '내 예약 보기', '#reserve');
           const pay = el('button', 'btn small', '입금 계좌 보기'); pay.type = 'button'; pay.style.marginLeft = '10px';
           const payOpts = payInfo(p, people, chosen);
           pay.addEventListener('click', () => showPayPopup(payOpts));

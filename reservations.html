@@ -15,6 +15,7 @@
   .sum span { display: block; font-size: .9rem; color: var(--muted); margin-bottom: 2px; }
   .sum b { font-size: 1.5rem; font-family: var(--serif); }
   .badge.requested { background: #f3e1bd; color: #6f4a0c; }
+  .badge.paid { background: #dbe8f7; color: #1f4b7a; }
   .badge.confirmed { background: var(--ok-bg); color: var(--ok-fg); }
   .badge.canceled { background: var(--off-bg); color: var(--off-fg); }
   .item.canceled { opacity: .6; }
@@ -50,7 +51,7 @@
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 예약 조회·확정은 로그인한 관리인만 가능합니다(DB의 RLS 규칙).
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
   const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
-  const STATUS = { requested: '확정 대기', confirmed: '예약 확정', canceled: '취소됨' };
+  const STATUS = { requested: '입금 대기', paid: '예약 접수', confirmed: '예약 확정', canceled: '취소됨' };
 
   const $ = (id) => document.getElementById(id);
   const root = $('root');
@@ -58,7 +59,7 @@
   try { token = sessionStorage.getItem('admin_token'); } catch (e) {}
   let rows = [];
   let query = '', searchUi = null, listBox = null;
-  let tab = 'requested';
+  let tab = 'paid'; // 처음에는 관리자가 확정해야 할 "예약 접수(입금 완료)" 건을 보여 줌
 
   function el(tag, cls, text) {
     const e = document.createElement(tag);
@@ -172,15 +173,16 @@
     stock.append('예약 신청 ' + fmtStamp(r.created_at) + ' · 이 일정 남은 자리: ');
     stock.append(el('b', null, p.remaining == null ? '제한 없음' : p.remaining + '명'));
     item.append(stock);
+    if (r.paid_at) item.append(el('p', 'hint', '💳 입금 완료 표시: ' + fmtStamp(r.paid_at) + (r.status === 'paid' ? ' — 입금을 확인한 뒤 [예약 확정]을 눌러 주세요.' : '')));
     if (r.note) item.append(el('p', 'desc', '요청사항: ' + r.note));
 
     const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
     if (flash) { msg.className = 'msg ok'; msg.textContent = flash; }
 
-    if (['requested', 'confirmed', 'canceled'].includes(r.status)) {
+    if (['requested', 'paid', 'confirmed', 'canceled'].includes(r.status)) {
       const act = el('div', 'actions');
       if (r.status !== 'confirmed') {
-        const ok = el('button', 'btn small', r.status === 'canceled' ? '다시 확정 (입금 확인)' : '예약 확정'); ok.type = 'button';
+        const ok = el('button', 'btn small', r.status === 'canceled' ? '다시 확정 (입금 확인)' : r.status === 'requested' ? '바로 확정' : '예약 확정'); ok.type = 'button';
         ok.addEventListener('click', async () => {
           ok.disabled = true; msg.className = 'msg'; msg.textContent = '확정하는 중…';
           try {
@@ -241,13 +243,13 @@
       root.append(f);
     }
     const sum = el('div', 'sum');
-    [['확정 대기', count('requested') + '건'], ['예약 확정', count('confirmed') + '건 · ' + confirmedPeople + '명'], ['확정 금액', won(confirmedAmt)], ['취소', count('canceled') + '건']].forEach(([k, v]) => {
+    [['입금 대기', count('requested') + '건'], ['예약 접수(확정 대기)', count('paid') + '건'], ['예약 확정', count('confirmed') + '건 · ' + confirmedPeople + '명'], ['확정 금액', won(confirmedAmt)], ['취소', count('canceled') + '건']].forEach(([k, v]) => {
       const d = el('div'); d.append(el('span', null, k), el('b', null, v)); sum.append(d);
     });
     root.append(sum);
 
     const tabs = el('div', 'tabs'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', '상태');
-    [['requested', '확정 대기'], ['confirmed', '예약 확정'], ['canceled', '취소'], ['all', '전체']].forEach(([key, label]) => {
+    [['paid', '예약 접수'], ['requested', '입금 대기'], ['confirmed', '예약 확정'], ['canceled', '취소'], ['all', '전체']].forEach(([key, label]) => {
       const n = key === 'all' ? rows.length : count(key);
       const b = el('button', null, `${label} ${n}`); b.type = 'button';
       b.setAttribute('aria-pressed', String(tab === key));
@@ -287,7 +289,7 @@
 
     if (!list.length) {
       listBox.replaceChildren(el('div', 'state', query ? '검색 결과가 없습니다. 다른 이름·전화번호로 찾거나, 위에서 "전체"를 눌러 보세요.'
-        : tab === 'requested' ? '확정을 기다리는 예약이 없습니다.' : '해당하는 예약이 없습니다.'));
+        : tab === 'paid' ? '입금 완료 후 확정을 기다리는 예약이 없습니다.' : '해당하는 예약이 없습니다.'));
       return;
     }
     // 한 페이지에 5개씩 (처리 후 다시 그려도 보던 페이지 유지)
