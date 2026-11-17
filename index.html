@@ -20,8 +20,9 @@
   }
   .brand { display: block; padding: 6px 10px; margin: -6px 0; border-radius: 12px; text-decoration: none; color: inherit; cursor: pointer; }
   .brand:hover { background: rgba(140,74,47,.1); }
-  .brand .name { display: flex; align-items: center; gap: 10px; font-family: var(--serif); font-size: 1.7rem; font-weight: 700; color: var(--brand-dark); line-height: 1.2; }
+  .brand .name { display: flex; align-items: center; gap: 6px; font-family: var(--serif); font-size: 1.7rem; font-weight: 700; color: var(--brand-dark); line-height: 1.2; }
   .brand .word, .brand .word2 { height: 3.2rem; width: auto; flex: none; }
+  .brand .dot { flex: none; font-size: 2rem; line-height: 1; color: #a02020; font-weight: 700; }
   .brand .sub { margin-top: 6px; font-size: .95rem; color: var(--muted); }
   .nav { display: flex; flex-direction: column; gap: 6px; }
   .nav a {
@@ -86,6 +87,7 @@
     .call-bar:active { background: var(--brand-dark); }
     .brand .name { font-size: 1.3rem; white-space: nowrap; gap: 8px; }
     .brand .word, .brand .word2 { height: 2.4rem; }
+    .brand .dot { font-size: 1.5rem; }
     .nav { flex-direction: row; gap: 4px; }
     .nav a { white-space: nowrap; padding: 10px 14px; border-left: 0; border-bottom: 4px solid transparent; border-radius: 10px; font-size: 1.05rem; }
     .nav a[aria-current="page"] { border-bottom-color: var(--brand); box-shadow: none; }
@@ -101,7 +103,7 @@
 <aside class="side">
   <!-- 누르면 홈 화면으로 이동하면서 페이지를 새로 고침 (스크립트 맨 아래의 brand 클릭 처리) -->
   <a class="brand" id="brand" href="index.html" aria-label="봉불사 성지순례 봉찬회 — 홈으로 (새로 고침)">
-    <div class="name"><img class="word" src="images/logo-bongbulsa.png" alt="봉불사" width="69" height="48"><img class="word2" src="images/logo-bongchanhoe.png" alt="봉찬회" width="89" height="48"></div>
+    <div class="name"><img class="word" src="images/logo-bongbulsa.png" alt="봉불사" width="69" height="48"><span class="dot" aria-hidden="true">·</span><img class="word2" src="images/logo-bongchanhoe.png" alt="봉찬회" width="89" height="48"></div>
     <div class="sub">성지순례 봉찬회</div>
   </a>
   <nav class="nav" id="nav" aria-label="주 메뉴"></nav>
