@@ -42,6 +42,7 @@
   <div id="list"><div class="state">불러오는 중…</div></div>
 </main>
 
+<script src="paging.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 쓰기 권한은 DB의 RLS 규칙(로그인한 관리인만)이 정합니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -242,16 +243,8 @@
     return item;
   }
 
-  function section(title, cfg, rows) {
-    const frag = document.createDocumentFragment();
-    frag.append(el('h2', 'sec', title));
-    const list = el('div', 'list');
-    rows.forEach((r) => list.append(card(cfg, r)));
-    frag.append(list);
-    return frag;
-  }
-
   /* ---------- 화면 ---------- */
+  const pageOf = { tab: null, n: 1 };
   async function loadList() {
     const cfg = CONFIG[tab];
     const box = $('list');
@@ -262,9 +255,13 @@
       const past = rows.filter((r) => daysLeft(r[cfg.dateKey]) < 0).reverse();
       box.replaceChildren();
       if (!rows.length) { box.append(el('div', 'state', `등록된 ${cfg.label} 일정이 아직 없습니다.`)); return; }
-      if (upcoming.length) box.append(section('다가오는 일정', cfg, upcoming));
-      else box.append(el('div', 'state', '다가오는 일정이 아직 없습니다.'));
-      if (past.length) box.append(section('지난 일정', cfg, past));
+      // 한 페이지에 5개씩. 수정·저장 뒤에는 보던 페이지를 그대로 보여 줌 (탭을 바꾸면 1페이지부터)
+      const key = tab;
+      if (pageOf.tab !== key) { pageOf.tab = key; pageOf.n = 1; }
+      paginate(box, [
+        { title: '다가오는 일정', rows: upcoming, emptyText: '다가오는 일정이 아직 없습니다.' },
+        { title: '지난 일정', rows: past },
+      ], (r) => card(cfg, r), { perPage: 5, startPage: pageOf.n, onPage: (n) => { pageOf.n = n; } });
     } catch (e) {
       const s = el('div', 'state', '불러오지 못했습니다: ' + e.message);
       const b = el('button', 'btn ghost small', '다시 불러오기'); b.type = 'button';

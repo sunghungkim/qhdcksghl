@@ -115,9 +115,10 @@ function paginate(container, groups, makeCard, opts) {
     });
 
     if (totalPages > 1) container.append(pager());
+    if (opts && opts.onPage) opts.onPage(page);
     try { window.scrollTo({ top: 0 }); } catch (e) {}
   }
 
-  show(1);
+  show((opts && opts.startPage) || 1);
   return { show };
 }
