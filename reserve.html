@@ -14,6 +14,12 @@
   .badge.confirmed { background: var(--ok-bg); color: var(--ok-fg); }
   .badge.canceled { background: var(--off-bg); color: var(--off-fg); }
   .item.canceled { opacity: .6; }
+  .item.canceled .note-box.off { opacity: 1; }
+  .note-box { margin: 8px 0 0; padding: 12px 14px; border-radius: 10px; font-weight: 500; line-height: 1.6; }
+  .note-box a { font-weight: 700; color: inherit; }
+  .note-box.warn { background: #fff7e0; border: 1.5px solid #d9a441; }
+  .note-box.ok { background: var(--ok-bg); color: var(--ok-fg); }
+  .note-box.off { background: var(--off-bg); color: var(--off-fg); }
   .pay-card { display: flex; align-items: center; gap: 14px; width: 100%; margin-bottom: 14px; padding: 18px 20px; text-align: left; font: inherit; color: var(--text); cursor: pointer; background: #fdf0d2; border: 2px solid #d9a441; border-radius: 14px; }
   .pay-card:hover { background: #fae6b8; }
   .pay-card-ico { font-size: 2rem; }
@@ -92,6 +98,17 @@
     item.append(meta);
     if (Array.isArray(r.companions) && r.companions.length) item.append(el('p', 'desc', '함께 가시는 분: ' + r.companions.map((c) => c.name + ' (' + c.phone + ')').join(', ')));
     item.append(el('p', 'hint', '예약 신청: ' + fmtStamp(r.created_at)));
+
+    // 상태별 안내
+    if (r.status === 'requested') {
+      item.append(el('p', 'note-box warn', '⏰ 예약 후 2시간 안에 입금하여 예약이 확정되지 않으면 자동으로 취소됩니다. (' + fmtStamp(r.expires_at) + ' 까지) 입금 전까지는 아래에서 직접 취소할 수 있습니다.'));
+    } else if (r.status === 'confirmed') {
+      const p = el('p', 'note-box ok', '✅ 입금이 확인되어 예약이 확정되었습니다. 확정된 예약의 취소는 전화로 문의해 주세요: ');
+      const a = el('a', null, '02-387-8578'); a.href = 'tel:023878578'; p.append(a);
+      item.append(p);
+    } else if (r.status === 'canceled' && r.canceled_reason === 'timeout') {
+      item.append(el('p', 'note-box off', '예약 후 2시간 안에 입금 확인이 되지 않아 예약이 자동으로 취소되었습니다. 다시 예약해 주세요.'));
+    }
 
     if (r.status === 'requested' && !past) {
       const act = el('div', 'actions');
