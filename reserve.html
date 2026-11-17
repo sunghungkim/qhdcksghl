@@ -14,12 +14,20 @@
   .badge.confirmed { background: var(--ok-bg); color: var(--ok-fg); }
   .badge.canceled { background: var(--off-bg); color: var(--off-fg); }
   .item.canceled { opacity: .6; }
+  .pay-card { display: flex; align-items: center; gap: 14px; width: 100%; margin-bottom: 14px; padding: 18px 20px; text-align: left; font: inherit; color: var(--text); cursor: pointer; background: #fdf0d2; border: 2px solid #d9a441; border-radius: 14px; }
+  .pay-card:hover { background: #fae6b8; }
+  .pay-card-ico { font-size: 2rem; }
+  .pay-card-txt { display: grid; gap: 2px; flex: 1; }
+  .pay-card-txt b { font-size: 1.2rem; }
+  .pay-card-txt span { color: var(--muted); font-size: .95rem; }
+  .pay-card-go { font-size: 2rem; color: var(--brand-dark); }
   @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
 </style>
 </head>
 <body>
 <div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
 
+<script src="pay.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 내 예약은 회원 확인을 거치는 서버 함수로만 읽습니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -59,6 +67,17 @@
     root.replaceChildren(box);
   }
 
+  // 맨 위의 "입금 계좌 보기" 카드. 예약하고 팝업을 닫아도 여기서 언제든 다시 찾을 수 있습니다.
+  function payCard() {
+    const b = el('button', 'pay-card'); b.type = 'button';
+    b.append(el('span', 'pay-card-ico', '💳'));
+    const t = el('span', 'pay-card-txt');
+    t.append(el('b', null, '입금 계좌 보기'), el('span', null, '누르면 계좌번호가 나옵니다'));
+    b.append(t, el('span', 'pay-card-go', '›'));
+    b.addEventListener('click', () => showPayPopup({ heading: '입금 계좌 안내', hideMine: true }));
+    return b;
+  }
+
   function card(m, r) {
     const past = daysLeft(r.trip_date) < 0;
     const item = el('article', 'item ' + r.status + (past && r.status !== 'canceled' ? ' past' : ''));
@@ -76,6 +95,13 @@
 
     if (r.status === 'requested' && !past) {
       const act = el('div', 'actions');
+      const pb = el('button', 'btn small', '입금 계좌 보기'); pb.type = 'button';
+      pb.addEventListener('click', () => showPayPopup({
+        heading: '입금 계좌 안내', hideMine: true,
+        trip: r.title + ' · ' + fmtDate(r.trip_date) + ' · ' + r.people + '명' + (r.boarding ? ' · ' + r.boarding : ''),
+        amount: r.price != null && r.price > 0 ? won(r.price * r.people) + ' (1인 ' + won(r.price) + ')' : '',
+      }));
+      act.append(pb);
       const b = el('button', 'btn ghost small', '예약 취소'); b.type = 'button';
       const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
       b.addEventListener('click', () => {
@@ -111,6 +137,7 @@
       if (!r.ok) { needLogin(); return; }
       const items = r.items || [];
       root.replaceChildren();
+      root.append(payCard()); // 입금 계좌 카드: 누르면 계좌번호 팝업
 
       if (!items.length) {
         const box = el('div', 'state', m.name + '님의 예약이 아직 없습니다.');

@@ -216,3 +216,16 @@ header.page h1 { margin: 0; font-size: 1.7rem; }
   .item, .card, .box { padding: 20px; }
   .bar, header.page { padding-left: 16px; padding-right: 16px; }
 }
+
+/* 입금 안내 팝업 (pay.js) */
+.pay-body { display: grid; gap: 12px; }
+.pay-trip { font-weight: 700; margin: 0; }
+.pay-amt { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--brand-dark); }
+.pay-sub { margin: 4px 0 0; font-weight: 700; }
+.pay-acc .btn { min-width: 6.2em; white-space: nowrap; padding: 10px 14px; }
+.pay-num { white-space: nowrap; user-select: all; }
+.pay-acc { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; background: var(--sand); border: 1.5px solid var(--line); border-radius: 12px; }
+.pay-bank { font-weight: 700; }
+.pay-num { font-size: 1.3rem; font-weight: 700; letter-spacing: .02em; word-break: keep-all; }
+.pay-owner { color: var(--muted); font-size: .95rem; }
+.pay-note { margin: 4px 0 0; padding: 12px 14px; background: #fff7e0; border-radius: 10px; font-weight: 500; }
