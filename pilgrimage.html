@@ -18,6 +18,7 @@
   .reserve-sub { font-weight: 700; }
   .stops { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .stop { display: grid; gap: 2px; text-align: center; padding: 12px 10px; min-height: 64px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+  .stops.need { outline: 3px solid var(--red); outline-offset: 4px; border-radius: 12px; }
   .stop:hover { border-color: var(--brand); }
   .stop-place { font-weight: 700; }
   .stop-time { font-size: 1.1rem; color: var(--brand-dark); font-weight: 700; }
@@ -126,7 +127,7 @@
         b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
         b.append(el('span', 'stop-place', s.place), el('span', 'stop-time', s.time || ''));
         b.addEventListener('click', () => {
-          chosen = stopLabel(s);
+          chosen = stopLabel(s); grp.classList.remove('need');
           grp.querySelectorAll('.stop').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on ? 'true' : 'false'); });
         });
         grp.append(b);
@@ -187,7 +188,12 @@
       const m = currentMember();
       if (!m) { panel.hidden = true; open.textContent = '예약 신청서 쓰기'; say('예약은 회원 로그인 후에 할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
       const name = m.name, phone = m.phone;
-      if (stops.length && !chosen) { say('차량 탑승지를 선택해 주세요.', 'err'); return; }
+      if (stops.length && !chosen) {
+        say('차량 탑승지를 먼저 선택해 주세요. (위의 탑승지 버튼을 눌러 주세요)', 'err');
+        const g = panel.querySelector('.stops');
+        if (g) { g.classList.add('need'); g.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+        return;
+      }
       const people = Number(num.value);
       if (!Number.isInteger(people) || people < 1 || people > 100) { say('인원은 1명 이상으로 입력해 주세요.', 'err'); return; }
       syncComp();
