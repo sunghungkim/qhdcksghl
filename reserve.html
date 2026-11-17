@@ -68,6 +68,7 @@
 
     const meta = el('div', 'meta');
     meta.append(el('span', null, '📅 ' + fmtDate(r.trip_date)), el('span', null, '📍 ' + r.place), el('span', null, '👥 ' + r.people + '명'));
+    if (r.boarding) meta.append(el('span', null, '🚌 ' + r.boarding));
     if (r.price != null) meta.append(el('span', null, '💰 ' + (r.price === 0 ? '무료' : won(r.price * r.people) + ' (1인 ' + won(r.price) + ')')));
     item.append(meta);
     item.append(el('p', 'hint', '예약 신청: ' + fmtStamp(r.created_at)));

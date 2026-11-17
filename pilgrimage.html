@@ -11,6 +11,17 @@
   .reserve-box { display: grid; gap: 8px; }
   .people { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; }
   .people input { width: 5.2rem; min-height: 48px; text-align: center; }
+  .reserve-panel { display: grid; gap: 14px; margin-top: 4px; padding: 16px; background: var(--sand); border-radius: 12px; }
+  .reserve-id { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .reserve-sub { font-weight: 700; }
+  .stops { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
+  .stop { display: grid; gap: 2px; text-align: center; padding: 12px 10px; min-height: 64px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+  .stop:hover { border-color: var(--brand); }
+  .stop-place { font-weight: 700; }
+  .stop-time { font-size: 1.1rem; color: var(--brand-dark); font-weight: 700; }
+  .stop.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .stop.on .stop-time { color: #fff; }
+  @media (max-width: 560px) { .reserve-id { grid-template-columns: 1fr; } }
   @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
 </style>
 </head>
@@ -62,17 +73,69 @@
   function topGo(hash) { try { window.top.location.hash = hash; } catch (e) { location.href = 'index.html' + hash; } }
   function currentMember() { try { return window.top.getMember ? window.top.getMember() : null; } catch (e) { return null; } }
 
+  // 차량 탑승지 목록: [{place, time}] — 없으면 빈 배열
+  function stopsOf(p) { return Array.isArray(p.boardings) ? p.boardings.filter((b) => b && b.place) : []; }
+  const stopLabel = (b) => (b.time ? b.place + ' ' + b.time : b.place);
+
   function reserveBox(p) {
+    const stops = stopsOf(p);
     const box = el('div', 'reserve-box');
+    const open = el('button', 'btn', '예약하기'); open.type = 'button';
+    open.setAttribute('aria-expanded', 'false');
+    box.append(open);
+
+    const panel = el('div', 'reserve-panel'); panel.hidden = true;
+    const m0 = currentMember();
+
+    const mkField = (labelText, type, value, ph, ac) => {
+      const l = el('label', 'f', labelText);
+      const i = el('input'); i.type = type; i.value = value || ''; i.placeholder = ph;
+      if (ac) i.autocomplete = ac;
+      if (type === 'tel') i.inputMode = 'tel';
+      l.append(i);
+      return [l, i];
+    };
+    const [nameL, nameI] = mkField('이름', 'text', m0 && m0.name, '예: 홍길동', 'name');
+    const [phoneL, phoneI] = mkField('전화번호', 'tel', m0 && m0.phone, '예: 010-1234-5678', 'tel');
+    nameI.maxLength = 50;
+    const idRow = el('div', 'reserve-id'); idRow.append(nameL, phoneL);
+    panel.append(idRow);
+
+    // 차량 탑승지 버튼 (장소 + 탑승시간)
+    let chosen = null;
+    if (stops.length) {
+      panel.append(el('div', 'reserve-sub', '차량 탑승지를 눌러 선택하세요'));
+      const grp = el('div', 'stops'); grp.setAttribute('role', 'radiogroup'); grp.setAttribute('aria-label', '차량 탑승지');
+      stops.forEach((s) => {
+        const b = el('button', 'stop');
+        b.type = 'button'; b.setAttribute('role', 'radio'); b.setAttribute('aria-checked', 'false');
+        b.append(el('span', 'stop-place', s.place), el('span', 'stop-time', s.time || ''));
+        b.addEventListener('click', () => {
+          chosen = stopLabel(s);
+          grp.querySelectorAll('.stop').forEach((x) => { const on = x === b; x.classList.toggle('on', on); x.setAttribute('aria-checked', on ? 'true' : 'false'); });
+        });
+        grp.append(b);
+      });
+      panel.append(grp);
+    }
+
     const row = el('div', 'actions');
     const lab = el('label', 'people', '인원 ');
     const num = el('input'); num.type = 'number'; num.min = 1; num.max = 100; num.step = 1; num.value = 1;
     num.setAttribute('aria-label', '예약 인원(명)');
     lab.append(num, document.createTextNode(' 명'));
-    const b = el('button', 'btn', '예약하기'); b.type = 'button';
+    const b = el('button', 'btn', '예약 신청'); b.type = 'button';
     row.append(lab, b);
     const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
-    box.append(row, msg);
+    panel.append(row, msg);
+    box.append(panel);
+
+    open.addEventListener('click', () => {
+      panel.hidden = !panel.hidden;
+      open.setAttribute('aria-expanded', String(!panel.hidden));
+      open.textContent = panel.hidden ? '예약하기' : '예약창 닫기';
+      if (!panel.hidden && !nameI.value) nameI.focus();
+    });
 
     const say = (text, kind, linkText, hash) => {
       msg.className = 'msg' + (kind ? ' ' + kind : '');
@@ -86,8 +149,11 @@
     };
 
     b.addEventListener('click', async () => {
-      const m = currentMember();
-      if (!m) { say('회원 로그인 후 예약할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
+      const name = nameI.value.trim();
+      const phone = phoneI.value.trim();
+      if (!name) { say('이름을 입력해 주세요.', 'err'); nameI.focus(); return; }
+      if (phone.replace(/\D/g, '').length < 9) { say('전화번호를 정확히 입력해 주세요.', 'err'); phoneI.focus(); return; }
+      if (stops.length && !chosen) { say('차량 탑승지를 선택해 주세요.', 'err'); return; }
       const people = Number(num.value);
       if (!Number.isInteger(people) || people < 1 || people > 100) { say('인원은 1명 이상으로 입력해 주세요.', 'err'); return; }
       b.disabled = true; say('예약하는 중…');
@@ -95,16 +161,26 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_reserve`, {
           method: 'POST',
           headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_name: m.name, p_phone: m.phone, p_pilgrimage_id: p.id, p_people: people }),
+          body: JSON.stringify({ p_name: name, p_phone: phone, p_pilgrimage_id: p.id, p_people: people, p_boarding: chosen }),
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const r = await res.json();
-        if (r.ok) say('예약되었습니다. 내 예약에 추가했어요.', 'ok', '내 예약 보기', '#reserve');
+        if (r.ok) {
+          // 아직 로그인하지 않았다면 방금 입력한 이름·전화번호로 로그인된 것으로 둡니다 (내 예약에서 바로 보이도록)
+          try {
+            if (!currentMember()) {
+              sessionStorage.setItem('member', JSON.stringify({ name, phone }));
+              if (window.top.renderWho) window.top.renderWho();
+            }
+          } catch (e) {}
+          say('예약되었습니다.' + (chosen ? ' 탑승지: ' + chosen + '.' : '') + ' 내 예약에 추가했어요.', 'ok', '내 예약 보기', '#reserve');
+        }
         else if (r.reason === 'duplicate') say('이미 예약하신 일정입니다.', 'err', '내 예약 보기', '#reserve');
         else if (r.reason === 'closed') say('마감되었거나 지난 일정입니다.', 'err');
         else if (r.reason === 'full') say('남은 자리가 부족합니다.', 'err');
+        else if (r.reason === 'need_boarding') say('차량 탑승지를 선택해 주세요.', 'err');
         else if (r.reason === 'locked') say('잠시 막혔습니다. 10분 뒤에 다시 시도해 주세요.', 'err');
-        else say('로그인 정보를 확인해 주세요.', 'err', '로그인하기', '#login');
+        else say('회원으로 확인되지 않았습니다. 이름과 전화번호를 다시 확인해 주세요.', 'err');
       } catch (e) {
         say('예약하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');
       }

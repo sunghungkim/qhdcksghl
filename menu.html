@@ -62,6 +62,7 @@
         { key: 'price', label: '금액(원)', type: 'number', min: 0 },
         { key: 'capacity', label: '정원(명)', type: 'number', min: 1 },
         { key: 'status', label: '상태', type: 'select', options: STATUS_OPTS, def: 'open' },
+        { key: 'boardings', label: '차량 탑승지 (한 줄에 한 곳: 장소 시간 — 예: 조계사 오전 6시30분)', type: 'stops', wide: true },
         { key: 'description', label: '설명', type: 'textarea', wide: true },
       ],
     },
@@ -151,7 +152,7 @@
       const lab = el('label', 'f' + (f.wide ? ' wide' : ''));
       lab.append(f.label + (f.required ? ' *' : ''));
       let inp;
-      if (f.type === 'textarea') inp = el('textarea');
+      if (f.type === 'textarea' || f.type === 'stops') inp = el('textarea');
       else if (f.type === 'select') {
         inp = el('select');
         f.options.forEach((o) => { const op = el('option', null, o.label); op.value = o.value; inp.append(op); });
@@ -162,7 +163,8 @@
       }
       if (f.required) inp.required = true;
       const cur = row ? row[f.key] : f.def;
-      inp.value = cur == null ? '' : cur;
+      if (f.type === 'stops') inp.value = (Array.isArray(cur) ? cur : []).map((s) => (s.place + ' ' + (s.time || '')).trim()).join('\n');
+      else inp.value = cur == null ? '' : cur;
       inputs[f.key] = inp;
       lab.append(inp);
       grid.append(lab);
@@ -181,7 +183,14 @@
       const data = {};
       cfg.fields.forEach((f) => {
         const v = inputs[f.key].value.trim();
-        if (f.type === 'number') data[f.key] = v === '' ? null : Number(v);
+        if (f.type === 'stops') {
+          // 한 줄 = 한 탑승지. 끝의 "오전 6시30분" 같은 부분을 시간으로, 앞부분을 장소로 나눕니다.
+          data[f.key] = v.split('\n').map((ln) => ln.trim()).filter(Boolean).map((ln) => {
+            const m = ln.match(/^(.*?)\s+((?:(?:오전|오후|저녁|밤|새벽)\s*)?\d{1,2}시(?:\s*\d{1,2}분)?)$/);
+            return m ? { place: m[1].trim(), time: m[2].trim() } : { place: ln, time: '' };
+          });
+        }
+        else if (f.type === 'number') data[f.key] = v === '' ? null : Number(v);
         else data[f.key] = v === '' && !f.required ? null : v;
       });
       save.disabled = true; msg.className = 'msg'; msg.textContent = '저장 중…';

@@ -159,6 +159,7 @@
     if (p.trip_date) meta.append(el('span', null, '📅 ' + fmtDate(p.trip_date)));
     if (p.place) meta.append(el('span', null, '📍 ' + p.place));
     meta.append(el('span', null, '👥 ' + r.people + '명'));
+    if (r.boarding) meta.append(el('span', null, '🚌 ' + r.boarding));
     if (p.price != null) meta.append(el('span', null, '💰 ' + (p.price === 0 ? '무료' : won(p.price * r.people))));
     item.append(meta);
 
