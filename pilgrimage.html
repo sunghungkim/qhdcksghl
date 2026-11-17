@@ -18,6 +18,17 @@
   .reserve-sub { font-weight: 700; }
   .stops { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 10px; }
   .stop { display: grid; gap: 2px; text-align: center; padding: 12px 10px; min-height: 64px; border: 2px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); font: inherit; cursor: pointer; }
+  .pay-body { display: grid; gap: 12px; }
+  .pay-trip { font-weight: 700; margin: 0; }
+  .pay-amt { margin: 0; font-size: 1.15rem; font-weight: 700; color: var(--brand-dark); }
+  .pay-sub { margin: 4px 0 0; font-weight: 700; }
+  .pay-acc .btn { min-width: 6.2em; white-space: nowrap; padding: 10px 14px; }
+  .pay-num { white-space: nowrap; user-select: all; }
+  .pay-acc { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 14px 16px; background: var(--sand); border: 1.5px solid var(--line); border-radius: 12px; }
+  .pay-bank { font-weight: 700; }
+  .pay-num { font-size: 1.3rem; font-weight: 700; letter-spacing: .02em; word-break: keep-all; }
+  .pay-owner { color: var(--muted); font-size: .95rem; }
+  .pay-note { margin: 4px 0 0; padding: 12px 14px; background: #fff7e0; border-radius: 10px; font-weight: 500; }
   .stops.need { outline: 3px solid var(--red); outline-offset: 4px; border-radius: 12px; }
   .stop:hover { border-color: var(--brand); }
   .stop-place { font-weight: 700; }
@@ -79,6 +90,73 @@
   // 차량 탑승지 목록: [{place, time}] — 없으면 빈 배열
   function stopsOf(p) { return Array.isArray(p.boardings) ? p.boardings.filter((b) => b && b.place) : []; }
   const stopLabel = (b) => (b.time ? b.place + ' ' + b.time : b.place);
+
+  /* ---------- 입금 안내 팝업: 예약 직후에 계좌번호(복사 버튼)와 확정 안내를 보여 줍니다 ---------- */
+  // 계좌를 바꾸려면 여기만 고치세요. copy 는 복사될 숫자(공백 없음)입니다.
+  const ACCOUNTS = [
+    { bank: '국민은행', shown: '910 6627 8859', copy: '91066278859', owner: '박소희' },
+    { bank: '농협', shown: '010 6627 8859 09', copy: '0106627885909', owner: '박소희' },
+  ];
+
+  async function copyText(text) {
+    try { await navigator.clipboard.writeText(text); return true; } catch (e) {}
+    try { // 일부 환경에서는 위 방법이 막혀 있어 예전 방식으로 한 번 더 시도
+      const t = el('textarea'); t.value = text; t.setAttribute('readonly', ''); t.style.cssText = 'position:fixed;top:0;left:0;opacity:0';
+      document.body.append(t); t.select();
+      const ok = document.execCommand('copy'); t.remove(); return ok;
+    } catch (e) { return false; }
+  }
+
+  function showPayPopup(p, people, boarding) {
+    const overlay = el('div', 'popup-overlay');
+    const box = el('div', 'popup-box pay-box');
+    box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'pay-title');
+    const head = el('div', 'popup-head');
+    const title = el('h2', 'popup-title', '예약이 접수되었습니다'); title.id = 'pay-title';
+    const x = el('button', 'btn ghost small popup-x', '닫기 ✕'); x.type = 'button';
+    head.append(title, x);
+
+    const body = el('div', 'popup-body pay-body');
+    body.append(el('p', 'pay-trip', p.title + ' · ' + fmtDate(p.trip_date) + ' · ' + people + '명' + (boarding ? ' · ' + boarding : '')));
+    if (p.price != null && p.price > 0) body.append(el('p', 'pay-amt', '입금하실 금액: ' + (p.price * people).toLocaleString('ko-KR') + '원 (1인 ' + Number(p.price).toLocaleString('ko-KR') + '원)'));
+    body.append(el('p', 'pay-sub', '아래 계좌로 입금해 주세요 (예금주 박소희)'));
+    ACCOUNTS.forEach((a) => {
+      const row = el('div', 'pay-acc');
+      const info = el('div', 'pay-info');
+      const num = el('div', 'pay-num', a.shown);
+      info.append(el('div', 'pay-bank', a.bank), num, el('div', 'pay-owner', '예금주 ' + a.owner));
+      const c = el('button', 'btn', '복사'); c.type = 'button';
+      c.setAttribute('aria-label', a.bank + ' 계좌번호 복사');
+      c.addEventListener('click', async () => {
+        const ok = await copyText(a.copy);
+        if (!ok) { // 복사가 막힌 환경: 숫자를 선택해 두면 직접 복사할 수 있음
+          try { const r = document.createRange(); r.selectNodeContents(num); const s = window.getSelection(); s.removeAllRanges(); s.addRange(r); } catch (e) {}
+        }
+        c.textContent = ok ? '복사됨 ✓' : '숫자를 눌러 복사';
+        setTimeout(() => { c.textContent = '복사'; }, 2000);
+      });
+      row.append(info, c);
+      body.append(row);
+    });
+    body.append(el('p', 'pay-note', '입금이 완료되면 입금 확인 후 예약이 확정됩니다. 확정 전까지는 "내 예약"에 접수 상태로 보입니다.'));
+
+    const foot = el('div', 'popup-foot');
+    const mine = el('button', 'btn ghost', '내 예약 보기'); mine.type = 'button';
+    const ok = el('button', 'btn', '확인'); ok.type = 'button';
+    foot.append(mine, ok);
+    box.append(head, body, foot); overlay.append(box);
+
+    const prev = document.activeElement;
+    const close = () => { document.removeEventListener('keydown', onKey); overlay.remove(); if (prev && prev.focus) { try { prev.focus(); } catch (e) {} } };
+    const onKey = (e) => { if (e.key === 'Escape') close(); };
+    x.addEventListener('click', close); ok.addEventListener('click', close);
+    mine.addEventListener('click', () => { close(); topGo('#reserve'); });
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    document.addEventListener('keydown', onKey);
+    document.body.append(overlay);
+    ok.focus();
+    return { close };
+  }
 
   function reserveBox(p) {
     const stops = stopsOf(p);
@@ -213,7 +291,13 @@
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const r = await res.json();
-        if (r.ok) say('예약되었습니다.' + (chosen ? ' 탑승지: ' + chosen + '.' : '') + ' 내 예약에 추가했어요.', 'ok', '내 예약 보기', '#reserve');
+        if (r.ok) {
+          say('예약이 접수되었습니다. 입금 확인 후 예약이 확정됩니다.' + (chosen ? ' (탑승지: ' + chosen + ')' : ''), 'ok', '내 예약 보기', '#reserve');
+          const pay = el('button', 'btn small', '입금 계좌 보기'); pay.type = 'button'; pay.style.marginLeft = '10px';
+          pay.addEventListener('click', () => showPayPopup(p, people, chosen));
+          msg.append(pay);
+          showPayPopup(p, people, chosen);
+        }
         else if (r.reason === 'duplicate') say('이미 예약하신 일정입니다.', 'err', '내 예약 보기', '#reserve');
         else if (r.reason === 'closed') say('마감되었거나 지난 일정입니다.', 'err');
         else if (r.reason === 'full') say('남은 자리가 부족합니다.', 'err');
