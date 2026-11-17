@@ -39,6 +39,7 @@
 <body>
 <div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
 
+<script src="paging.js"></script>
 <script src="pay.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 내 예약은 회원 확인을 거치는 서버 함수로만 읽습니다.
@@ -92,6 +93,7 @@
 
   // 빨간 타이머: 화면에 있는 모든 .timer 를 1초마다 갱신. 0이 되면 목록을 다시 불러와 취소 상태를 보여 줌
   let timerId = null, reloading = false, lastReload = 0;
+  let query = '', pageNo = 1, mySearch = null, drawFn = null;
   function tickTimers() {
     const pad = (n) => String(n).padStart(2, '0');
     let expired = false;
@@ -201,16 +203,26 @@
       });
       root.append(bar);
 
-      const upcoming = items.filter((x) => daysLeft(x.trip_date) >= 0 && x.status !== 'canceled');
-      const rest = items.filter((x) => !(daysLeft(x.trip_date) >= 0 && x.status !== 'canceled'));
-      if (upcoming.length) {
-        root.append(el('h2', 'sec', '다가오는 예약'));
-        const l = el('div', 'list'); upcoming.forEach((x) => l.append(card(m, x))); root.append(l);
+      // 일정 검색 + 한 페이지에 5개씩 (검색창은 한 번만 만들어 계속 씀)
+      const dateWords = (s) => { const [y, mo, d] = s.split('-').map(Number); return `${s} ${y}년 ${mo}월 ${d}일 ${mo}월${d}일 ${mo}/${d}`; };
+      const hay = (x) => [x.title, x.place, dateWords(x.trip_date), x.boarding, STATUS[x.status], (x.companions || []).map((c) => c.name).join(' ')].join(' ');
+      const results = el('div');
+      const draw = () => {
+        const hit = items.filter((x) => matchesQuery(hay(x), query));
+        mySearch.setInfo(query ? `"${query}" 검색 결과 ${hit.length}건` : `전체 ${items.length}건`);
+        if (!hit.length) { results.replaceChildren(el('div', 'state', '검색 결과가 없습니다. 다른 낱말로 찾아보세요. (예: 12월 20일, 해맞이, 예약 확정)')); return; }
+        const isUp = (x) => daysLeft(x.trip_date) >= 0 && x.status !== 'canceled';
+        paginate(results, [
+          { title: '다가오는 예약', rows: hit.filter(isUp) },
+          { title: '지난 예약 · 취소된 예약', rows: hit.filter((x) => !isUp(x)) },
+        ], (x) => card(m, x), { perPage: 5, startPage: pageNo, onPage: (n) => { pageNo = n; } });
+      };
+      if (!mySearch) {
+        mySearch = searchBox({ placeholder: '예: 해맞이, 통도사, 12월 20일', label: '예약 검색', onSearch: (q) => { query = q; pageNo = 1; drawFn(); } });
       }
-      if (rest.length) {
-        root.append(el('h2', 'sec', '지난 예약 · 취소된 예약'));
-        const l = el('div', 'list'); rest.forEach((x) => l.append(card(m, x))); root.append(l);
-      }
+      drawFn = draw;
+      root.append(mySearch.el, results);
+      draw();
     } catch (e) {
       const box = el('div', 'state', '예약을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
       const b = el('button', 'btn ghost', '다시 불러오기'); b.type = 'button'; b.addEventListener('click', load);
