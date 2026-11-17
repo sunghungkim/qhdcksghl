@@ -23,7 +23,6 @@
   .brand .name { display: flex; align-items: center; gap: 6px; font-family: var(--serif); font-size: 1.7rem; font-weight: 700; color: var(--brand-dark); line-height: 1.2; }
   .brand .word, .brand .word2 { height: 3.2rem; width: auto; flex: none; }
   .brand .dot { flex: none; font-size: 2rem; line-height: 1; color: #a02020; font-weight: 700; }
-  .brand .sub { margin-top: 6px; font-size: .95rem; color: var(--muted); }
   .nav { display: flex; flex-direction: column; gap: 6px; }
   .nav a {
     display: block; padding: 14px 16px; border-radius: 12px;
@@ -77,7 +76,7 @@
   @media (max-width: 760px) {
     body { flex-direction: column; }
     .side { width: 100%; flex-direction: row; align-items: center; gap: 12px; padding: 12px 16px; overflow-x: auto; overflow-y: hidden; border-right: 0; border-bottom: 1px solid var(--line); }
-    .brand .sub, .side .call { display: none; }
+    .side .call { display: none; }
     .call-bar {
       display: flex; align-items: center; justify-content: center; gap: 8px; flex: none;
       min-height: 46px; padding: 8px 12px; background: var(--brand); color: #fff;
@@ -104,7 +103,6 @@
   <!-- 누르면 홈 화면으로 이동하면서 페이지를 새로 고침 (스크립트 맨 아래의 brand 클릭 처리) -->
   <a class="brand" id="brand" href="index.html" aria-label="봉불사 성지순례 봉찬회 — 홈으로 (새로 고침)">
     <div class="name"><img class="word" src="images/logo-bongbulsa.png" alt="봉불사" width="69" height="48"><span class="dot" aria-hidden="true">·</span><img class="word2" src="images/logo-bongchanhoe.png" alt="봉찬회" width="89" height="48"></div>
-    <div class="sub">성지순례 봉찬회</div>
   </a>
   <nav class="nav" id="nav" aria-label="주 메뉴"></nav>
   <div class="call">문의 및 접수<a href="tel:023878578">02-387-8578</a></div>
