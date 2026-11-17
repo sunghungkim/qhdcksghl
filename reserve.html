@@ -15,12 +15,6 @@
   .badge.canceled { background: var(--off-bg); color: var(--off-fg); }
   .item.canceled { opacity: .6; }
   .item.canceled .note-box.off { opacity: 1; }
-  .timer { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin: 10px 0 0; padding: 12px 16px; background: #fdecea; border: 2px solid var(--red); border-radius: 12px; color: var(--red); }
-  .timer-lab { font-weight: 700; }
-  .timer-val { font-size: 1.9rem; font-variant-numeric: tabular-nums; letter-spacing: .04em; }
-  .timer.last .timer-val { animation: blink 1s steps(2, start) infinite; }
-  @keyframes blink { to { opacity: .35; } }
-  @media (prefers-reduced-motion: reduce) { .timer.last .timer-val { animation: none; } }
   .note-box { margin: 8px 0 0; padding: 12px 14px; border-radius: 10px; font-weight: 500; line-height: 1.6; }
   .note-box a { font-weight: 700; color: inherit; }
   .note-box.warn { background: #fff7e0; border: 1.5px solid #d9a441; }
@@ -91,23 +85,8 @@
     return b;
   }
 
-  // 빨간 타이머: 화면에 있는 모든 .timer 를 1초마다 갱신. 0이 되면 목록을 다시 불러와 취소 상태를 보여 줌
-  let timerId = null, reloading = false, lastReload = 0;
-  let query = '', pageNo = 1, mySearch = null, drawFn = null;
-  function tickTimers() {
-    const pad = (n) => String(n).padStart(2, '0');
-    let expired = false;
-    document.querySelectorAll('.timer').forEach((t) => {
-      const left = Math.max(0, Number(t.dataset.exp) - Date.now());
-      const s = Math.floor(left / 1000);
-      t.querySelector('.timer-val').textContent = `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s % 3600 / 60))}:${pad(s % 60)}`;
-      t.classList.toggle('last', left < 600000); // 10분 미만이면 깜박임
-      if (left <= 0) expired = true;
-    });
-    // (기기 시계가 어긋나 계속 0으로 보여도 다시 불러오기는 20초에 한 번만)
-    if (expired && !reloading && Date.now() - lastReload > 20000) { reloading = true; lastReload = Date.now(); setTimeout(async () => { try { await load(); } finally { reloading = false; } }, 1500); }
-    if (!timerId) timerId = setInterval(tickTimers, 1000);
-  }
+
+  let query = '', pageNo = 1, mySearch = null, drawFn = null; // 검색어·페이지·검색창(한 번만 만들어 계속 씀)
 
   function card(m, r) {
     const past = daysLeft(r.trip_date) < 0;
@@ -126,18 +105,11 @@
 
     // 상태별 안내
     if (r.status === 'requested') {
-      const tm = el('div', 'timer'); tm.setAttribute('role', 'timer');
-      tm.dataset.exp = String(new Date(r.expires_at).getTime());
-      tm.append(el('span', 'timer-lab', '⏰ 자동 취소까지 남은 시간'), el('b', 'timer-val', '--:--:--'));
-      item.append(tm);
-      tickTimers();
-      item.append(el('p', 'note-box warn', '⏰ 예약 후 2시간 안에 입금하여 예약이 확정되지 않으면 자동으로 취소됩니다. (' + fmtStamp(r.expires_at) + ' 까지) 입금 전까지는 아래에서 직접 취소할 수 있습니다.'));
+      item.append(el('p', 'note-box warn', '입금이 확인되면 예약이 확정됩니다. 확정되기 전에는 아래에서 직접 취소할 수 있습니다.'));
     } else if (r.status === 'confirmed') {
       const p = el('p', 'note-box ok', '✅ 입금이 확인되어 예약이 확정되었습니다. 확정된 예약의 취소는 전화로 문의해 주세요: ');
       const a = el('a', null, '02-387-8578'); a.href = 'tel:023878578'; p.append(a);
       item.append(p);
-    } else if (r.status === 'canceled' && r.canceled_reason === 'timeout') {
-      item.append(el('p', 'note-box off', '예약 후 2시간 안에 입금 확인이 되지 않아 예약이 자동으로 취소되었습니다. 다시 예약해 주세요.'));
     }
 
     if (r.status === 'requested' && !past) {

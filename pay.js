@@ -58,7 +58,7 @@ function showPayPopup(opts) {
     row.append(info, c);
     body.append(row);
   });
-  body.append(mk('p', 'pay-note', '입금이 완료되면 입금 확인 후 예약이 확정됩니다. 예약 후 2시간 안에 입금·확정되지 않으면 예약이 자동으로 취소됩니다. 확정된 예약의 취소는 전화(02-387-8578)로 문의해 주세요.'));
+  body.append(mk('p', 'pay-note', '입금이 완료되면 입금 확인 후 예약이 확정됩니다. 확정된 예약의 취소는 전화(02-387-8578)로 문의해 주세요.'));
 
   const foot = mk('div', 'popup-foot');
   const ok = mk('button', 'btn', '확인'); ok.type = 'button';
