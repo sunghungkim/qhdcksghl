@@ -1,0 +1,5 @@
+{
+  "redirects": [
+    { "source": "/(CLAUDE\.md|PRD\.md|serve\.ps1|vercel\.json)", "destination": "/", "permanent": false }
+  ]
+}
