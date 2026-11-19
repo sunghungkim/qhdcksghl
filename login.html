@@ -15,6 +15,9 @@
   .card p.sub { margin: 0; color: var(--muted); font-size: .95rem; }
   .card form { display: grid; gap: 14px; }
   .card.admin { background: var(--sand); }
+  .tabs { display: flex; gap: 8px; }
+  .tabbtn { flex: 1; min-height: 48px; padding: 8px 14px; font: inherit; font-weight: 700; border: 1.5px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); cursor: pointer; }
+  .tabbtn.on { background: var(--brand); border-color: var(--brand); color: #fff; }
   .note { margin: 0; padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
   @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
 </style>
@@ -24,18 +27,34 @@
   <p class="note" id="status" hidden></p>
 
   <div class="two">
-    <!-- 회원 로그인 -->
+    <!-- 회원 로그인 / 회원가입 -->
     <section class="card" aria-labelledby="h-member">
-      <h2 id="h-member">회원 로그인</h2>
-      <p class="sub">아이디는 <b>이름</b>, 비밀번호는 <b>전화번호</b>입니다.</p>
+      <h2 id="h-member">회원</h2>
+      <div class="tabs" role="tablist" aria-label="회원 메뉴">
+        <button type="button" role="tab" id="tab-login" aria-selected="true" class="tabbtn on">로그인</button>
+        <button type="button" role="tab" id="tab-signup" aria-selected="false" class="tabbtn">회원가입</button>
+      </div>
+
       <form id="member-form">
-        <label class="f">아이디 (이름)<input id="m-name" type="text" autocomplete="username" required maxlength="50"></label>
-        <label class="f">비밀번호 (전화번호)<input id="m-phone" type="password" inputmode="numeric" autocomplete="current-password" required maxlength="20"></label>
+        <p class="sub">처음이시면 위의 <b>회원가입</b>을 먼저 눌러 주세요.</p>
+        <label class="f">이름<input id="m-name" type="text" autocomplete="username" required maxlength="50"></label>
+        <label class="f">전화번호<input id="m-phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="20" placeholder="예: 010-1234-5678"></label>
+        <label class="f">비밀번호 (숫자 4~8자리)<input id="m-pw" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" placeholder="가입하신 비밀번호"></label>
         <button class="btn" type="submit" id="m-go">회원 로그인</button>
         <div class="msg" id="m-msg" role="status"></div>
-        <p class="hint">입력하신 이름·전화번호는 본인 확인에만 사용합니다. <button type="button" class="privacy-link" id="privacy-open">개인정보 안내 보기</button></p>
       </form>
-      <p class="hint" style="margin:0">회원이 아니셔도 로그인 없이 일정을 볼 수 있습니다.</p>
+
+      <form id="signup-form" hidden>
+        <p class="sub">이름, 전화번호와 <b>간편 비밀번호(숫자 4~8자리)</b>를 정해 주세요. 한 번만 가입하시면 됩니다.</p>
+        <label class="f">이름<input id="s-name" type="text" autocomplete="name" required maxlength="50"></label>
+        <label class="f">전화번호<input id="s-phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="20" placeholder="예: 010-1234-5678"></label>
+        <label class="f">비밀번호 (숫자 4~8자리)<input id="s-pw" type="password" inputmode="numeric" autocomplete="new-password" required maxlength="8" pattern="[0-9]{4,8}" placeholder="숫자만 4~8자리"></label>
+        <label class="f">비밀번호 확인<input id="s-pw2" type="password" inputmode="numeric" autocomplete="new-password" required maxlength="8" pattern="[0-9]{4,8}" placeholder="한 번 더 입력"></label>
+        <div id="s-consent"></div>
+        <button class="btn" type="submit" id="s-go">가입하기</button>
+        <div class="msg" id="s-msg" role="status"></div>
+      </form>
+      <p class="hint" style="margin:0">입력하신 이름·전화번호는 예약 안내에만 사용합니다. <button type="button" class="privacy-link" id="privacy-open">개인정보 안내 보기</button><br>회원이 아니셔도 로그인 없이 일정을 볼 수 있습니다.</p>
     </section>
 
     <!-- 관리자 로그인 -->
@@ -87,31 +106,84 @@
   }
   showStatus();
 
-  /* ---------- 회원 로그인 (이름 + 전화번호) ---------- */
+  /* ---------- 회원: 탭(로그인 / 회원가입) ---------- */
+  const consent = buildConsent(); // 개인정보 수집·이용 동의 (필수)
+  $('s-consent').append(consent.el);
+  function showTab(which) {
+    const login = which === 'login';
+    $('member-form').hidden = !login; $('signup-form').hidden = login;
+    $('tab-login').classList.toggle('on', login); $('tab-signup').classList.toggle('on', !login);
+    $('tab-login').setAttribute('aria-selected', String(login)); $('tab-signup').setAttribute('aria-selected', String(!login));
+  }
+  $('tab-login').addEventListener('click', () => showTab('login'));
+  $('tab-signup').addEventListener('click', () => showTab('signup'));
+
+  async function rpc(fn, args) {
+    const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/' + fn, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+  function saveMember(r, phone) {
+    try { sessionStorage.setItem('member', JSON.stringify({ name: r.name, phone, token: r.token || null })); } catch (e) {}
+  }
+
+  /* ---------- 회원 로그인 (이름 + 전화번호 + 비밀번호) ---------- */
   $('member-form').addEventListener('submit', async (ev) => {
     ev.preventDefault();
     const msg = $('m-msg'), go = $('m-go');
-    const name = $('m-name').value.trim(), phone = $('m-phone').value;
+    const name = $('m-name').value.trim(), phone = $('m-phone').value, pw = $('m-pw').value;
     go.disabled = true; say(msg, '확인 중…');
     try {
-      const res = await fetch(SUPABASE_URL + '/rest/v1/rpc/member_login', {
-        method: 'POST',
-        headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ p_name: name, p_phone: phone }),
-      });
-      if (!res.ok) throw new Error('HTTP ' + res.status);
-      const r = await res.json();
+      const r = await rpc('member_login', { p_name: name, p_phone: phone, p_password: pw || null });
       if (r && r.ok) {
-        try { sessionStorage.setItem('member', JSON.stringify({ name: r.name, phone })); } catch (e) {}
-        $('m-phone').value = '';
+        saveMember(r, phone);
+        $('m-pw').value = '';
         say(msg, '로그인되었습니다.', 'ok');
         afterLogin('member');
         return;
       }
       if (r && r.reason === 'locked') say(msg, '틀린 횟수가 많아 잠시 막혔습니다. 10분 뒤에 다시 시도해 주세요.', 'err');
-      else say(msg, '아이디(이름) 또는 비밀번호(전화번호)가 맞지 않습니다. 회원이 아니시면 로그인 없이 일정을 보실 수 있습니다.', 'err');
+      else if (r && r.reason === 'need_password') { say(msg, '가입하신 회원입니다. 비밀번호(숫자)를 입력해 주세요.', 'err'); $('m-pw').focus(); }
+      else if (r && r.reason === 'bad_login') say(msg, '이름, 전화번호 또는 비밀번호가 맞지 않습니다.', 'err');
+      else say(msg, '가입된 회원이 아닙니다. 위의 회원가입을 눌러 가입해 주세요. (회원이 아니셔도 일정은 볼 수 있습니다)', 'err');
     } catch (e) {
       say(msg, '로그인하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');
+    }
+    go.disabled = false;
+  });
+
+  /* ---------- 회원가입 (이름 + 전화번호 + 숫자 비밀번호 4~8자리) ---------- */
+  $('signup-form').addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    const msg = $('s-msg'), go = $('s-go');
+    const name = $('s-name').value.trim(), phone = $('s-phone').value, pw = $('s-pw').value, pw2 = $('s-pw2').value;
+    if (!name) { say(msg, '이름을 입력해 주세요.', 'err'); return; }
+    if (phone.replace(/\D/g, '').length < 9) { say(msg, '전화번호를 정확히 입력해 주세요.', 'err'); return; }
+    if (!/^[0-9]{4,8}$/.test(pw)) { say(msg, '비밀번호는 숫자 4~8자리로 입력해 주세요.', 'err'); $('s-pw').focus(); return; }
+    if (pw !== pw2) { say(msg, '비밀번호 확인이 같지 않습니다. 다시 입력해 주세요.', 'err'); $('s-pw2').focus(); return; }
+    if (!consent.isChecked()) { say(msg, '개인정보 수집·이용에 동의해 주세요. (체크칸을 눌러 주세요)', 'err'); consent.focus(); return; }
+    go.disabled = true; say(msg, '가입하는 중…');
+    try {
+      const r = await rpc('member_signup', { p_name: name, p_phone: phone, p_password: pw, p_consent: true });
+      if (r && r.ok) {
+        saveMember(r, phone);
+        $('s-pw').value = ''; $('s-pw2').value = '';
+        say(msg, '가입되었습니다. 로그인된 상태로 이동합니다…', 'ok');
+        afterLogin('member');
+        return;
+      }
+      const why = r && r.reason;
+      if (why === 'already_member') say(msg, '이미 가입된 이름·전화번호입니다. 위의 로그인에서 비밀번호로 로그인해 주세요. (비밀번호를 잊으셨으면 02-387-8578로 문의해 주세요)', 'err');
+      else if (why === 'bad_password') say(msg, '비밀번호는 숫자 4~8자리로 입력해 주세요.', 'err');
+      else if (why === 'bad_phone') say(msg, '전화번호를 정확히 입력해 주세요.', 'err');
+      else if (why === 'busy') say(msg, '지금 가입 요청이 많습니다. 잠시 뒤에 다시 시도해 주세요.', 'err');
+      else say(msg, '가입하지 못했습니다. 입력 내용을 확인해 주세요.', 'err');
+    } catch (e) {
+      say(msg, '가입하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');
     }
     go.disabled = false;
   });

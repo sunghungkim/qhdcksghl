@@ -195,7 +195,7 @@
 
     open.addEventListener('click', () => {
       if (panel.hidden) {
-        if (!currentMember()) { say('예약은 회원 로그인 후에 할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
+        if (!currentMember()) { say('예약은 회원가입·로그인 후에 할 수 있습니다.', 'err', '로그인 · 회원가입', '#login'); return; }
         const mm = currentMember();
         nameI.value = mm.name; phoneI.value = mm.phone;
         gate.replaceChildren();
@@ -207,7 +207,7 @@
 
     b.addEventListener('click', async () => {
       const m = currentMember();
-      if (!m) { panel.hidden = true; open.textContent = '예약 신청서 쓰기'; say('예약은 회원 로그인 후에 할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
+      if (!m) { panel.hidden = true; open.textContent = '예약 신청서 쓰기'; say('예약은 회원가입·로그인 후에 할 수 있습니다.', 'err', '로그인 · 회원가입', '#login'); return; }
       const name = m.name, phone = m.phone;
       if (!consent.isChecked()) { say('개인정보 수집·이용에 동의해 주세요. (체크칸을 눌러 주세요)', 'err'); consent.focus(); return; }
       if (stops.length && !chosen) {
@@ -231,7 +231,7 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_reserve`, {
           method: 'POST',
           headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_name: name, p_phone: phone, p_pilgrimage_id: p.id, p_people: people, p_boarding: chosen, p_companions: companions, p_consent: consent.isChecked() }),
+          body: JSON.stringify({ p_name: name, p_phone: phone, p_pilgrimage_id: p.id, p_people: people, p_boarding: chosen, p_companions: companions, p_consent: consent.isChecked(), p_token: (m && m.token) || null }),
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const r = await res.json();

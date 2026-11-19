@@ -141,7 +141,7 @@
         if (!yes) return;
         pd.disabled = true; b.disabled = true; msg.className = 'msg'; msg.textContent = '접수하는 중…';
         try {
-          const res = await rpc('mark_reservation_paid', { p_name: m.name, p_phone: m.phone, p_id: r.id });
+          const res = await rpc('mark_reservation_paid', { p_name: m.name, p_phone: m.phone, p_id: r.id, p_token: m.token || null });
           if (res.ok) { load(); return; }
           msg.className = 'msg err'; msg.textContent = '처리할 수 없는 예약입니다. 목록을 새로 불러옵니다.'; setTimeout(load, 1200);
         } catch (e) { msg.className = 'msg err'; msg.textContent = '접수하지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
@@ -158,7 +158,7 @@
         yes.addEventListener('click', async () => {
           yes.disabled = true; msg.className = 'msg'; msg.textContent = '취소하는 중…';
           try {
-            const res = await rpc('cancel_my_reservation', { p_name: m.name, p_phone: m.phone, p_id: r.id });
+            const res = await rpc('cancel_my_reservation', { p_name: m.name, p_phone: m.phone, p_id: r.id, p_token: m.token || null });
             if (res.ok) { load(); return; }
             msg.className = 'msg err'; msg.textContent = '취소할 수 없는 예약입니다. 문의 전화로 연락해 주세요.';
           } catch (e) { msg.className = 'msg err'; msg.textContent = '취소하지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
@@ -177,7 +177,7 @@
     if (!m) { needLogin(); return; }
     root.replaceChildren(el('div', 'state', '불러오는 중…'));
     try {
-      const r = await rpc('my_reservations', { p_name: m.name, p_phone: m.phone });
+      const r = await rpc('my_reservations', { p_name: m.name, p_phone: m.phone, p_token: m.token || null });
       if (!r.ok) { needLogin(); return; }
       const items = r.items || [];
       root.replaceChildren();
