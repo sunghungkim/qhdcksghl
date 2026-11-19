@@ -77,6 +77,51 @@
     root.replaceChildren(box);
   }
 
+  // 비밀번호 바꾸기 (비밀번호를 정한 회원만: 로그인 증표가 있을 때)
+  function showChangePassword(m) {
+    const overlay = el('div', 'popup-overlay');
+    const box = el('div', 'popup-box ask-box');
+    box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'cpw-title');
+    const head = el('div', 'popup-head'); const t = el('h2', 'popup-title', '비밀번호 바꾸기'); t.id = 'cpw-title';
+    const x = el('button', 'btn ghost small popup-x', '닫기 ✕'); x.type = 'button'; head.append(t, x);
+    const form = el('form', 'popup-body');
+    const mk = (label, ac) => { const l = el('label', 'f', label); const i = el('input'); i.type = 'password'; i.inputMode = 'numeric'; i.maxLength = 8; i.required = true; i.autocomplete = ac; l.append(i); form.append(l); return i; };
+    const oldI = mk('현재 비밀번호', 'current-password');
+    const newI = mk('새 비밀번호 (숫자 4~8자리)', 'new-password');
+    const new2 = mk('새 비밀번호 확인', 'new-password');
+    const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+    const foot = el('div', 'popup-foot');
+    const go = el('button', 'btn', '바꾸기'); go.type = 'submit';
+    foot.append(go);
+    form.append(msg, foot);
+    box.append(head, form); overlay.append(box);
+    const close = () => overlay.remove();
+    x.addEventListener('click', close);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const o = oldI.value, n = newI.value;
+      if (!/^[0-9]{4,8}$/.test(n)) { msg.className = 'msg err'; msg.textContent = '새 비밀번호는 숫자 4~8자리로 입력해 주세요.'; return; }
+      if (n !== new2.value) { msg.className = 'msg err'; msg.textContent = '새 비밀번호 확인이 같지 않습니다.'; return; }
+      go.disabled = true; msg.className = 'msg'; msg.textContent = '바꾸는 중…';
+      try {
+        const r = await rpc('member_change_password', { p_name: m.name, p_phone: m.phone, p_token: m.token || null, p_old: o, p_new: n });
+        if (r.ok) { msg.className = 'msg ok'; msg.textContent = '비밀번호를 바꿨습니다.'; setTimeout(close, 1200); return; }
+        msg.className = 'msg err';
+        msg.textContent = r.reason === 'wrong_old' ? '현재 비밀번호가 맞지 않습니다.' : r.reason === 'bad_password' ? '새 비밀번호는 숫자 4~8자리로 입력해 주세요.' : '바꾸지 못했습니다. 다시 로그인한 뒤 시도해 주세요.';
+      } catch (e) { msg.className = 'msg err'; msg.textContent = '바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+      go.disabled = false;
+    });
+    document.body.append(overlay);
+    oldI.focus();
+  }
+  function pwButton(m) {
+    const b = el('button', 'btn ghost small', '🔑 비밀번호 바꾸기'); b.type = 'button';
+    b.style.margin = '0 0 14px';
+    b.addEventListener('click', () => showChangePassword(m));
+    return b;
+  }
+
   // 맨 위의 "입금 계좌 보기" 카드. 예약하고 팝업을 닫아도 여기서 언제든 다시 찾을 수 있습니다.
   function payCard() {
     const b = el('button', 'pay-card'); b.type = 'button';
@@ -182,6 +227,7 @@
       const items = r.items || [];
       root.replaceChildren();
       root.append(payCard()); // 입금 계좌 카드: 누르면 계좌번호 팝업
+      if (m.token) root.append(pwButton(m)); // 비밀번호를 정한 회원만
 
       if (!items.length) {
         const box = el('div', 'state', m.name + '님의 예약이 아직 없습니다.');

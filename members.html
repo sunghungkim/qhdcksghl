@@ -1,0 +1,267 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>회원 관리 · 봉불사</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  main { padding: 36px 40px 56px; max-width: 980px; }
+  .sum { display: flex; gap: 10px 28px; flex-wrap: wrap; padding: 16px 20px; margin-bottom: 18px; background: var(--sand); border-radius: 14px; }
+  .sum b { font-family: var(--serif); font-size: 1.3rem; }
+  .addbox { margin-bottom: 18px; }
+  .addbox .grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; }
+  .tag { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: .9rem; font-weight: 700; background: var(--off-bg); color: var(--off-fg); }
+  .tag.ok { background: var(--ok-bg); color: var(--ok-fg); }
+  .meta .key { color: var(--text); font-weight: 700; }
+  .temp-box { text-align: center; }
+  .temp-num { display: block; margin: 8px 0; font-size: 2.6rem; font-weight: 800; letter-spacing: .15em; color: var(--brand-dark); user-select: all; }
+  @media (max-width: 760px) { main { padding: 24px 16px 40px; } .addbox .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <div><div class="name">🪷 봉불사</div><div class="sub">성지순례 봉찬회</div></div>
+  <div class="sp"></div>
+  <a href="index.html">홈으로</a>
+  <a href="menu.html">행사 관리</a>
+  <a href="reservations.html">전체 예약</a>
+  <a href="sales.html">매출</a>
+  <button class="link" id="auth-btn" type="button" hidden>로그아웃</button>
+</div>
+
+<header class="page">
+  <h1>회원 관리</h1>
+  <span class="admin-tag" id="admin-tag" hidden>관리자 모드</span>
+</header>
+
+<main id="root"></main>
+
+<script src="paging.js"></script>
+<script src="pay.js"></script>
+<script>
+  // 공개용(publishable) 키입니다. 회원 목록·초기화·삭제는 로그인한 관리자만 할 수 있습니다(DB가 막습니다).
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+
+  const $ = (id) => document.getElementById(id);
+  const root = $('root');
+  let token = null;
+  try { token = sessionStorage.getItem('admin_token'); } catch (e) {}
+  let members = [];
+  let query = '', searchUi = null, listBox = null, pageNo = 1, flash = null;
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text; // textContent 만 사용
+    return e;
+  }
+  function fmtStamp(iso) { if (!iso) return '-'; const d = new Date(iso); return `${d.getFullYear()}.${d.getMonth() + 1}.${d.getDate()} ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+  function fmtPhone(p) { return /^010\d{8}$/.test(p) ? p.replace(/^(\d{3})(\d{4})(\d{4})$/, '$1-$2-$3') : p; }
+
+  async function api(path, opts = {}) {
+    const res = await fetch(SUPABASE_URL + path, {
+      ...opts,
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + (token || SUPABASE_KEY), 'Content-Type': 'application/json', ...(opts.headers || {}) },
+    });
+    if (res.status === 401) { logout(); throw new Error('로그인이 만료되었습니다. 다시 로그인해 주세요.'); }
+    if (!res.ok) {
+      let m = 'HTTP ' + res.status;
+      try { const j = await res.json(); m = j.message || j.msg || m; } catch (e) {}
+      throw new Error(m);
+    }
+    return res.status === 204 ? null : res.json();
+  }
+  const rpc = (fn, args) => api('/rest/v1/rpc/' + fn, { method: 'POST', body: JSON.stringify(args || {}) });
+
+  async function login(email, password) {
+    const res = await fetch(SUPABASE_URL + '/auth/v1/token?grant_type=password', {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.access_token) throw new Error('이메일 또는 비밀번호가 올바르지 않습니다.');
+    token = j.access_token;
+    try { sessionStorage.setItem('admin_token', token); } catch (e) {}
+  }
+  function logout() {
+    token = null;
+    try { sessionStorage.removeItem('admin_token'); } catch (e) {}
+    location.href = 'index.html#login';
+  }
+  $('auth-btn').addEventListener('click', logout);
+
+  function renderLogin() {
+    root.replaceChildren(el('h2', 'sec', '관리자 로그인'));
+    root.append(el('p', 'hint', '회원 관리는 관리자만 볼 수 있습니다.'));
+    const form = el('form', 'box');
+    const grid = el('div', 'grid');
+    const mk = (label, type, ac) => {
+      const l = el('label', 'f'); l.append(label);
+      const i = el('input'); i.type = type; i.required = true; i.autocomplete = ac;
+      l.append(i); grid.append(l); return i;
+    };
+    const email = mk('이메일', 'email', 'username');
+    const pw = mk('비밀번호', 'password', 'current-password');
+    const msg = el('div', 'msg');
+    const go = el('button', 'btn', '로그인'); go.type = 'submit';
+    form.append(grid, go, msg);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      go.disabled = true; msg.className = 'msg'; msg.textContent = '로그인 중…';
+      try { await login(email.value.trim(), pw.value); render(); }
+      catch (e) { msg.className = 'msg err'; msg.textContent = e.message; go.disabled = false; }
+    });
+    root.append(form);
+    email.focus();
+  }
+
+  /* ---------- 임시 비밀번호 팝업 (이 창을 닫으면 다시 볼 수 없음) ---------- */
+  function showTempPassword(name, temp, heading) {
+    const overlay = el('div', 'popup-overlay');
+    const box = el('div', 'popup-box ask-box temp-box');
+    box.setAttribute('role', 'alertdialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'tmp-title');
+    const head = el('div', 'popup-head'); const t = el('h2', 'popup-title', heading || '임시 비밀번호'); t.id = 'tmp-title'; head.append(t);
+    const body = el('div', 'popup-body');
+    body.append(el('p', 'ask-msg', name + '님의 임시 비밀번호입니다.'));
+    body.append(el('span', 'temp-num', temp));
+    body.append(el('p', 'ask-msg', '전화로 알려 주세요. 이 창을 닫으면 다시 볼 수 없습니다. 회원은 로그인한 뒤 [내 예약]에서 비밀번호를 바꿀 수 있습니다.'));
+    const foot = el('div', 'popup-foot');
+    const cp = el('button', 'btn ghost', '번호 복사'); cp.type = 'button';
+    const ok = el('button', 'btn', '확인했습니다'); ok.type = 'button';
+    foot.append(cp, ok);
+    box.append(head, body, foot); overlay.append(box);
+    cp.addEventListener('click', async () => { const done = await copyText(temp); cp.textContent = done ? '복사됨 ✓' : '숫자를 눌러 복사'; });
+    ok.addEventListener('click', () => overlay.remove());
+    document.body.append(overlay);
+    ok.focus();
+  }
+
+  /* ---------- 화면 ---------- */
+  async function load() {
+    members = await rpc('admin_list_members');
+  }
+
+  function memberCard(m) {
+    const item = el('article', 'item');
+    const top = el('div', 'top');
+    top.append(el('h3', 'title', m.name), el('span', 'tag' + (m.has_password ? ' ok' : ''), m.has_password ? '비밀번호 설정됨' : '비밀번호 없음'));
+    item.append(top);
+    const who = el('div', 'who2'); const a = el('a', null, fmtPhone(m.phone)); a.href = 'tel:' + m.phone; who.append('📞 ', a);
+    item.append(who);
+    const meta = el('div', 'meta');
+    meta.append(el('span', null, '가입 ' + fmtStamp(m.created_at)), el('span', null, '마지막 로그인 ' + fmtStamp(m.last_login_at)),
+      el('span', 'key', '예약 ' + m.reservations + '건'), el('span', null, '개인정보 동의 ' + (m.consent_at ? fmtStamp(m.consent_at) : '기록 없음')));
+    item.append(meta);
+
+    const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+    const act = el('div', 'actions');
+    const reset = el('button', 'btn small', '비밀번호 초기화'); reset.type = 'button';
+    const del = el('button', 'btn ghost small', '회원 삭제'); del.type = 'button';
+    reset.addEventListener('click', async () => {
+      const yes = await askPopup({ heading: '비밀번호를 초기화할까요?', message: m.name + '님의 비밀번호를 새 임시 번호(숫자 6자리)로 바꿉니다. 지금 로그인되어 있는 기기는 모두 로그아웃됩니다.', yes: '예, 초기화합니다', no: '아니요' });
+      if (!yes) return;
+      reset.disabled = true; msg.className = 'msg'; msg.textContent = '처리하는 중…';
+      try {
+        const r = await rpc('admin_reset_member_password', { p_id: m.id });
+        if (r && r.ok) { msg.textContent = ''; showTempPassword(m.name, r.temp, '비밀번호를 초기화했습니다'); await refresh(); return; }
+        msg.className = 'msg err'; msg.textContent = '처리하지 못했습니다. 목록을 새로 불러옵니다.'; await refresh();
+      } catch (e) { msg.className = 'msg err'; msg.textContent = '처리하지 못했습니다: ' + e.message; }
+      reset.disabled = false;
+    });
+    del.addEventListener('click', async () => {
+      const yes = await askPopup({ heading: '회원을 삭제할까요?', message: m.name + '님의 회원 정보를 삭제합니다. 이미 한 예약 기록은 그대로 남습니다. 삭제한 뒤에는 되돌릴 수 없습니다.', yes: '예, 삭제합니다', no: '아니요' });
+      if (!yes) return;
+      del.disabled = true; msg.className = 'msg'; msg.textContent = '삭제하는 중…';
+      try {
+        const r = await rpc('admin_delete_member', { p_id: m.id });
+        flash = r && r.ok ? m.name + '님을 삭제했습니다.' : '이미 삭제된 회원입니다.';
+        await refresh(); return;
+      } catch (e) { msg.className = 'msg err'; msg.textContent = '삭제하지 못했습니다: ' + e.message; }
+      del.disabled = false;
+    });
+    act.append(reset, del);
+    item.append(act, msg);
+    return item;
+  }
+
+  function haystack(m) { return [m.name, m.phone, fmtPhone(m.phone), m.has_password ? '비밀번호 설정됨' : '비밀번호 없음'].join(' '); }
+
+  function drawList() {
+    const hit = members.filter((m) => matchesQuery(haystack(m), query));
+    searchUi.setInfo(query ? `"${query}" 검색 결과 ${hit.length}명` : `전체 ${members.length}명`);
+    if (!hit.length) { listBox.replaceChildren(el('div', 'state', query ? '검색 결과가 없습니다. 이름이나 전화번호 뒷자리로 찾아보세요.' : '아직 가입한 회원이 없습니다.')); return; }
+    paginate(listBox, [{ title: '', rows: hit }], (m) => memberCard(m), { perPage: 5, startPage: pageNo, onPage: (n) => { pageNo = n; } });
+  }
+
+  function draw() {
+    root.replaceChildren();
+    if (flash) {
+      const f = el('div', 'msg ok', flash); f.setAttribute('role', 'status');
+      f.style.cssText = 'padding:12px 16px;margin-bottom:16px;background:var(--ok-bg);border-radius:12px;font-size:1rem';
+      root.append(f); flash = null;
+    }
+    const withPw = members.filter((m) => m.has_password).length;
+    const sum = el('div', 'sum');
+    [['전체 회원', members.length + '명'], ['비밀번호 설정', withPw + '명']].forEach(([k, v]) => { const d = el('div'); d.append(el('span', null, k + ' '), el('b', null, v)); sum.append(d); });
+    root.append(sum);
+
+    // 회원 직접 추가 (가입이 어려운 분을 대신 등록 → 임시 비밀번호가 나옴)
+    const add = el('form', 'box addbox');
+    add.append(el('h2', 'sec', '회원 직접 추가'));
+    add.append(el('p', 'hint', '가입이 어려운 분을 대신 등록합니다. 임시 비밀번호(숫자 6자리)가 한 번 나오니 전화로 알려 주세요.'));
+    const grid = el('div', 'grid');
+    const mk = (label, type, ph, ac) => { const l = el('label', 'f'); l.append(label); const i = el('input'); i.type = type; i.required = true; i.placeholder = ph; i.autocomplete = ac || 'off'; l.append(i); grid.append(l); return i; };
+    const nm = mk('이름', 'text', '예: 홍길동'); nm.maxLength = 50;
+    const ph = mk('전화번호', 'tel', '예: 010-1234-5678'); ph.inputMode = 'tel';
+    const go = el('button', 'btn', '추가'); go.type = 'submit';
+    grid.append(go);
+    const amsg = el('div', 'msg'); amsg.setAttribute('role', 'status');
+    add.append(grid, amsg);
+    add.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      go.disabled = true; amsg.className = 'msg'; amsg.textContent = '추가하는 중…';
+      try {
+        const r = await rpc('admin_create_member', { p_name: nm.value.trim(), p_phone: ph.value });
+        if (r && r.ok) { const nameShown = nm.value.trim(); showTempPassword(nameShown, r.temp, '회원을 추가했습니다'); nm.value = ''; ph.value = ''; amsg.textContent = ''; await refresh(); go.disabled = false; return; }
+        amsg.className = 'msg err';
+        amsg.textContent = r.reason === 'exists' ? '이미 있는 회원입니다. 목록에서 찾아 비밀번호 초기화를 쓰세요.' : r.reason === 'bad_phone' ? '전화번호를 정확히 입력해 주세요.' : '추가하지 못했습니다. 입력 내용을 확인해 주세요.';
+      } catch (e) { amsg.className = 'msg err'; amsg.textContent = '추가하지 못했습니다: ' + e.message; }
+      go.disabled = false;
+    });
+    root.append(add);
+
+    if (!searchUi) {
+      searchUi = searchBox({ label: '회원 검색', placeholder: '이름 또는 전화번호(뒷자리도 가능)', onSearch: (q) => { query = q; pageNo = 1; drawList(); } });
+    }
+    root.append(searchUi.el);
+    listBox = el('div');
+    root.append(listBox);
+    drawList();
+  }
+
+  async function refresh() { await load(); draw(); }
+
+  async function render() {
+    const on = !!token;
+    $('admin-tag').hidden = !on;
+    $('auth-btn').hidden = !on;
+    if (!on) { renderLogin(); return; }
+    root.replaceChildren(el('div', 'state', '불러오는 중…'));
+    try { await load(); draw(); }
+    catch (e) {
+      if (!token) return;
+      const box = el('div', 'state', '불러오지 못했습니다: ' + e.message);
+      const b = el('button', 'btn ghost small', '다시 불러오기'); b.type = 'button'; b.addEventListener('click', render);
+      box.append(document.createElement('br'), b);
+      root.replaceChildren(box);
+    }
+  }
+  render();
+</script>
+</body>
+</html>
