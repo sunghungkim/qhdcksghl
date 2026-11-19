@@ -43,6 +43,7 @@
 <script src="paging.js"></script>
 <script src="flyers.js"></script>
 <script src="pay.js"></script>
+<script src="privacy.js"></script>
 <script>
   // 공개용(publishable) 키입니다. 브라우저에 두어도 안전하며, 접근 범위는 DB의 RLS 규칙이 정합니다.
   const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
@@ -153,6 +154,8 @@
       panel.append(grp);
     }
 
+    const consent = buildConsent(); // 개인정보 수집·이용 동의 (필수)
+    panel.append(consent.el);
     const b = el('button', 'btn', '예약하기'); b.type = 'button';
     const row = el('div', 'actions'); row.append(b);
     const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
@@ -206,6 +209,7 @@
       const m = currentMember();
       if (!m) { panel.hidden = true; open.textContent = '예약 신청서 쓰기'; say('예약은 회원 로그인 후에 할 수 있습니다.', 'err', '로그인하기', '#login'); return; }
       const name = m.name, phone = m.phone;
+      if (!consent.isChecked()) { say('개인정보 수집·이용에 동의해 주세요. (체크칸을 눌러 주세요)', 'err'); consent.focus(); return; }
       if (stops.length && !chosen) {
         say('차량 탑승지를 먼저 선택해 주세요. (위의 탑승지 버튼을 눌러 주세요)', 'err');
         const g = panel.querySelector('.stops');
@@ -227,7 +231,7 @@
         const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/member_reserve`, {
           method: 'POST',
           headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ p_name: name, p_phone: phone, p_pilgrimage_id: p.id, p_people: people, p_boarding: chosen, p_companions: companions }),
+          body: JSON.stringify({ p_name: name, p_phone: phone, p_pilgrimage_id: p.id, p_people: people, p_boarding: chosen, p_companions: companions, p_consent: consent.isChecked() }),
         });
         if (!res.ok) throw new Error('HTTP ' + res.status);
         const r = await res.json();
@@ -243,6 +247,7 @@
         else if (r.reason === 'closed') say('마감되었거나 지난 일정입니다.', 'err');
         else if (r.reason === 'full') say('남은 자리가 부족합니다.', 'err');
         else if (r.reason === 'need_boarding') say('차량 탑승지를 선택해 주세요.', 'err');
+        else if (r.reason === 'need_consent') say('개인정보 수집·이용에 동의해 주세요.', 'err');
         else if (r.reason === 'need_companions') say('인원 수에 맞게 모든 분의 이름과 전화번호를 입력해 주세요.', 'err');
         else if (r.reason === 'locked') say('잠시 막혔습니다. 10분 뒤에 다시 시도해 주세요.', 'err');
         else say('로그인 정보를 확인해 주세요.', 'err', '로그인하기', '#login');

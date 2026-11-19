@@ -238,3 +238,15 @@ header.page h1 { margin: 0; font-size: 1.7rem; }
 .ask-box { width: min(460px, 100%); }
 .ask-msg { margin: 0; font-size: 1.1rem; line-height: 1.7; text-align: center; font-weight: 500; }
 .ask-box .popup-foot .btn { flex: 1 1 0; min-height: 52px; }
+
+/* 개인정보 동의 (privacy.js) */
+.consent { display: grid; gap: 8px; padding: 14px 16px; background: var(--panel); border: 1.5px solid var(--line); border-radius: 12px; }
+.consent-lab { display: flex; align-items: center; gap: 12px; font-weight: 700; cursor: pointer; }
+.consent-lab input { width: 1.6rem; height: 1.6rem; min-height: 0; flex: none; accent-color: var(--brand); }
+.consent .btn { justify-self: start; }
+.consent-hint { margin: 0; color: var(--muted); font-size: .92rem; }
+.privacy-box { width: min(620px, 100%); }
+.privacy-body { gap: 12px; }
+.privacy-sec b { color: var(--brand-dark); }
+.privacy-sec p { margin: 2px 0 0; line-height: 1.7; }
+.privacy-link { background: none; border: 0; padding: 0; font: inherit; color: var(--brand-dark); text-decoration: underline; cursor: pointer; }
