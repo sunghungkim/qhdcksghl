@@ -84,7 +84,9 @@
   function afterLogin(target) {
     const inShell = window.top !== window;
     if (inShell && window.top.renderWho) window.top.renderWho();
-    if (target === 'admin') {
+    if (target === 'myinfo') {
+      if (inShell) window.top.location.hash = '#myinfo'; else location.href = 'index.html#myinfo';
+    } else if (target === 'admin') {
       (inShell ? window.top : window).location.href = 'menu.html';
     } else if (inShell) {
       window.top.location.hash = '#home';
@@ -142,6 +144,11 @@
       if (r && r.ok) {
         saveMember(r, phone);
         $('m-pw').value = '';
+        if (r.must_change) { // 관리자가 초기화한 임시 비밀번호 → 내 정보에서 새 비밀번호를 정하게 함
+          say(msg, '임시 비밀번호로 로그인되었습니다. 내 정보에서 새 비밀번호를 정해 주세요.', 'ok');
+          afterLogin('myinfo');
+          return;
+        }
         say(msg, '로그인되었습니다.', 'ok');
         afterLogin('member');
         return;

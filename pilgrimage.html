@@ -250,6 +250,7 @@
         else if (r.reason === 'need_consent') say('개인정보 수집·이용에 동의해 주세요.', 'err');
         else if (r.reason === 'need_companions') say('인원 수에 맞게 모든 분의 이름과 전화번호를 입력해 주세요.', 'err');
         else if (r.reason === 'locked') say('잠시 막혔습니다. 10분 뒤에 다시 시도해 주세요.', 'err');
+        else if (r.reason === 'must_change') say('임시 비밀번호를 쓰고 계십니다. 내 정보에서 새 비밀번호를 정한 뒤 예약해 주세요.', 'err', '내 정보 가기', '#myinfo');
         else say('로그인 정보를 확인해 주세요.', 'err', '로그인하기', '#login');
       } catch (e) {
         say('예약하지 못했습니다. 잠시 후 다시 시도해 주세요.', 'err');

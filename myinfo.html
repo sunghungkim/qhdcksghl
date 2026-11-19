@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="robots" content="noindex, nofollow">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>내 정보</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  body { padding: 36px 40px 56px; }
+  .wrap { max-width: 640px; display: grid; gap: 18px; }
+  .info { display: grid; gap: 8px; padding: 18px 20px; background: var(--sand); border-radius: 14px; }
+  .info dl { margin: 0; display: grid; grid-template-columns: 8.5em 1fr; gap: 8px 12px; }
+  .info dt { color: var(--muted); font-weight: 500; }
+  .info dd { margin: 0; font-weight: 700; }
+  .must { padding: 16px 18px; border-radius: 12px; background: #fff7e0; border: 2px solid #d9a441; font-weight: 700; line-height: 1.7; }
+  .pwform { display: grid; gap: 14px; }
+  .pwform h2 { margin: 0; font-size: 1.3rem; color: var(--brand-dark); }
+  @media (max-width: 760px) { body { padding: 24px 16px 40px; } .info dl { grid-template-columns: 7em 1fr; } }
+</style>
+</head>
+<body>
+<div class="wrap" id="root"><div class="state">불러오는 중…</div></div>
+
+<script>
+  // 공개용(publishable) 키입니다. 내 정보는 로그인 증표를 확인하는 서버 함수로만 읽고 바꿉니다.
+  const SUPABASE_URL = 'https://iixmdxfxayyjhnmngpve.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Thzc1yu4lKqvOKClASKUew_7FdA7lqv';
+  const root = document.getElementById('root');
+
+  function el(tag, cls, text) {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text; // textContent 만 사용
+    return e;
+  }
+  function topGo(hash) { try { window.top.location.hash = hash; } catch (e) { location.href = 'index.html' + hash; } }
+  function currentMember() { try { return window.top.getMember ? window.top.getMember() : null; } catch (e) { return null; } }
+  async function rpc(fn, args) {
+    const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+      method: 'POST',
+      headers: { apikey: SUPABASE_KEY, Authorization: 'Bearer ' + SUPABASE_KEY, 'Content-Type': 'application/json' },
+      body: JSON.stringify(args),
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.json();
+  }
+  function fmtPhone(p) { return /^010\d{8}$/.test(p) ? p.replace(/^(\d{3})(\d{4})(\d{4})$/, '$1-$2-$3') : p; }
+  function fmtStamp(iso) { if (!iso) return '-'; const d = new Date(iso); return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; }
+
+  function needLogin() {
+    const box = el('div', 'state', '로그인한 회원만 내 정보를 볼 수 있습니다.');
+    const b = el('button', 'btn', '로그인 · 회원가입'); b.type = 'button';
+    b.addEventListener('click', () => topGo('#login'));
+    box.append(document.createElement('br'), b);
+    root.replaceChildren(box);
+  }
+
+  function draw(m, info) {
+    root.replaceChildren();
+    if (info.must_change) {
+      root.append(el('div', 'must', '관리자가 비밀번호를 초기화했습니다. 임시 비밀번호로 로그인하셨으니, 아래에서 새 비밀번호를 꼭 정해 주세요. 정하기 전에는 예약 기능을 쓸 수 없습니다.'));
+    }
+    const box = el('section', 'info');
+    const dl = el('dl');
+    [['이름', info.name], ['전화번호', fmtPhone(info.phone)], ['가입일', fmtStamp(info.created_at)], ['마지막 로그인', fmtStamp(info.last_login_at)]].forEach(([k, v]) => { dl.append(el('dt', null, k), el('dd', null, v)); });
+    box.append(dl);
+    root.append(box);
+
+    const form = el('form', 'pwform');
+    form.append(el('h2', null, '비밀번호 바꾸기'));
+    const mk = (label, ac) => { const l = el('label', 'f', label); const i = el('input'); i.type = 'password'; i.inputMode = 'numeric'; i.maxLength = 8; i.required = true; i.autocomplete = ac; l.append(i); form.append(l); return i; };
+    const oldI = mk(info.must_change ? '임시 비밀번호 (관리자가 알려 준 숫자)' : '현재 비밀번호', 'current-password');
+    const newI = mk('새 비밀번호 (숫자 4~8자리)', 'new-password');
+    const new2 = mk('새 비밀번호 확인', 'new-password');
+    const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+    const go = el('button', 'btn', '비밀번호 바꾸기'); go.type = 'submit';
+    form.append(go, msg);
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      const o = oldI.value, n = newI.value;
+      if (!/^[0-9]{4,8}$/.test(n)) { msg.className = 'msg err'; msg.textContent = '새 비밀번호는 숫자 4~8자리로 입력해 주세요.'; newI.focus(); return; }
+      if (n !== new2.value) { msg.className = 'msg err'; msg.textContent = '새 비밀번호 확인이 같지 않습니다.'; new2.focus(); return; }
+      if (n === o) { msg.className = 'msg err'; msg.textContent = '새 비밀번호는 지금 비밀번호와 다르게 정해 주세요.'; newI.focus(); return; }
+      go.disabled = true; msg.className = 'msg'; msg.textContent = '바꾸는 중…';
+      try {
+        const r = await rpc('member_change_password', { p_name: m.name, p_phone: m.phone, p_token: m.token || null, p_old: o, p_new: n });
+        if (r.ok) {
+          oldI.value = newI.value = new2.value = '';
+          msg.className = 'msg ok'; msg.textContent = '비밀번호를 바꿨습니다. 이제 예약 기능을 쓰실 수 있습니다.';
+          const b = el('button', 'btn small', '성지순례 일정 보기'); b.type = 'button'; b.style.marginLeft = '10px';
+          b.addEventListener('click', () => topGo('#pilgrimage'));
+          msg.append(b);
+          const must = root.querySelector('.must'); if (must) must.remove();
+          go.disabled = false; return;
+        }
+        msg.className = 'msg err';
+        msg.textContent = r.reason === 'wrong_old' ? (info.must_change ? '임시 비밀번호가 맞지 않습니다.' : '현재 비밀번호가 맞지 않습니다.')
+          : r.reason === 'bad_password' ? '새 비밀번호는 숫자 4~8자리로 입력해 주세요.'
+          : r.reason === 'same_password' ? '새 비밀번호는 지금 비밀번호와 다르게 정해 주세요.'
+          : '바꾸지 못했습니다. 다시 로그인한 뒤 시도해 주세요.';
+      } catch (e) { msg.className = 'msg err'; msg.textContent = '바꾸지 못했습니다. 잠시 후 다시 시도해 주세요.'; }
+      go.disabled = false;
+    });
+    root.append(form);
+    root.append(el('p', 'hint', '비밀번호를 잊으셨다면 전화(02-387-8578)로 문의해 주세요. 임시 비밀번호를 알려 드립니다.'));
+    if (info.must_change) oldI.focus();
+  }
+
+  async function load() {
+    const m = currentMember();
+    if (!m) { needLogin(); return; }
+    root.replaceChildren(el('div', 'state', '불러오는 중…'));
+    try {
+      const info = await rpc('member_info', { p_name: m.name, p_phone: m.phone, p_token: m.token || null });
+      if (!info.ok) { needLogin(); return; }
+      if (!info.registered) {
+        root.replaceChildren(el('div', 'state', '아직 회원가입을 하지 않은 상태입니다. 가입하시면 비밀번호로 안전하게 로그인할 수 있습니다.'));
+        const b = el('button', 'btn', '회원가입하기'); b.type = 'button'; b.addEventListener('click', () => topGo('#login'));
+        root.firstChild.append(document.createElement('br'), b);
+        return;
+      }
+      draw(m, info);
+    } catch (e) {
+      const box = el('div', 'state', '내 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+      const b = el('button', 'btn ghost', '다시 불러오기'); b.type = 'button'; b.addEventListener('click', load);
+      box.append(document.createElement('br'), b);
+      root.replaceChildren(box);
+    }
+  }
+  load();
+</script>
+</body>
+</html>
