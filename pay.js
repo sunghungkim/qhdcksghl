@@ -118,3 +118,32 @@ function askPopup(opts) {
     no.focus();
   });
 }
+
+/* 안내 팝업: noticePopup({ heading, message, tel, telLabel, ok }) — 확인 버튼 하나(전화 걸기 버튼은 선택) */
+function noticePopup(opts) {
+  opts = opts || {};
+  const mk = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = text;
+    return e;
+  };
+  const overlay = mk('div', 'popup-overlay');
+  const box = mk('div', 'popup-box ask-box');
+  box.setAttribute('role', 'alertdialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'notice-title'); box.setAttribute('aria-describedby', 'notice-msg');
+  const head = mk('div', 'popup-head'); const t = mk('h2', 'popup-title', opts.heading || '안내'); t.id = 'notice-title'; head.append(t);
+  const body = mk('div', 'popup-body'); const m = mk('p', 'ask-msg', opts.message || ''); m.id = 'notice-msg'; body.append(m);
+  const foot = mk('div', 'popup-foot');
+  if (opts.tel) { const a = mk('a', 'btn', opts.telLabel || ('전화 ' + opts.tel)); a.href = 'tel:' + String(opts.tel).replace(/\D/g, ''); foot.append(a); }
+  const ok = mk('button', 'btn ghost', opts.ok || '확인'); ok.type = 'button'; foot.append(ok);
+  box.append(head, body, foot); overlay.append(box);
+  const prev = document.activeElement;
+  const close = () => { document.removeEventListener('keydown', onKey); overlay.remove(); if (prev && prev.focus) { try { prev.focus(); } catch (e) {} } };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  ok.addEventListener('click', close);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', onKey);
+  document.body.append(overlay);
+  ok.focus();
+  return { close };
+}
