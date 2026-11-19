@@ -16,6 +16,17 @@
   .sum span { display: block; font-size: .9rem; color: var(--muted); margin-bottom: 2px; }
   .sum b { font-size: 1.5rem; font-family: var(--serif); }
   .badge.requested { background: #f3e1bd; color: #6f4a0c; }
+  .setting-card { margin: 0 0 18px; padding: 14px 18px; background: var(--panel); border: 1.5px solid var(--line); border-radius: 14px; }
+  .setting-row { display: flex; align-items: center; justify-content: space-between; gap: 14px; }
+  .setting-txt { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 1.1rem; }
+  .setting-state { padding: 2px 12px; border-radius: 999px; font-weight: 700; font-size: .95rem; }
+  .setting-state.on { background: var(--ok-bg); color: var(--ok-fg); }
+  .setting-state.off { background: var(--off-bg); color: var(--off-fg); }
+  .switch { position: relative; flex: none; width: 4.4rem; height: 2.4rem; padding: 0; border: 0; border-radius: 999px; background: #b8ad9c; cursor: pointer; transition: background .15s; }
+  .switch.on { background: var(--ok-fg); }
+  .switch:disabled { opacity: .6; cursor: default; }
+  .switch .knob { position: absolute; top: .25rem; left: .25rem; width: 1.9rem; height: 1.9rem; border-radius: 50%; background: #fff; transition: transform .15s; box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+  .switch.on .knob { transform: translateX(2rem); }
   .badge.paid { background: #dbe8f7; color: #1f4b7a; }
   .badge.confirmed { background: var(--ok-bg); color: var(--ok-fg); }
   .badge.canceled { background: var(--off-bg); color: var(--off-fg); }
@@ -232,6 +243,45 @@
     draw();
   }
 
+  /* ---------- 관리자 설정: 문자 인증 사용 스위치 ---------- */
+  let settingsUi = null;
+  function smsSwitchCard() {
+    if (settingsUi) return settingsUi;
+    const card = el('section', 'setting-card');
+    const txt = el('div', 'setting-txt');
+    txt.append(el('b', null, '문자 인증 사용'));
+    const state = el('span', 'setting-state', '불러오는 중…');
+    txt.append(state);
+    const help = el('p', 'hint', '켜면 손님이 예약할 때 문자로 받은 인증번호를 입력해야 합니다. 꺼 두면 이름·전화번호만으로 예약합니다. (문자 발송 기능이 연결되기 전에는 켜도 아직 동작하지 않습니다.)');
+    const sw = el('button', 'switch'); sw.type = 'button'; sw.setAttribute('role', 'switch'); sw.setAttribute('aria-label', '문자 인증 사용'); sw.disabled = true;
+    sw.append(el('span', 'knob'));
+    const msg = el('div', 'msg'); msg.setAttribute('role', 'status');
+    const head = el('div', 'setting-row'); head.append(txt, sw);
+    card.append(head, help, msg);
+
+    let on = false;
+    const paint = () => {
+      sw.setAttribute('aria-checked', String(on));
+      sw.classList.toggle('on', on);
+      state.textContent = on ? '켜짐' : '꺼짐';
+      state.className = 'setting-state ' + (on ? 'on' : 'off');
+    };
+    api('/rest/v1/site_settings?key=eq.sms_verify_enabled&select=value')
+      .then((r) => { on = !!(r && r[0] && r[0].value === 'true'); paint(); sw.disabled = false; })
+      .catch(() => { state.textContent = '불러오지 못했습니다'; });
+    sw.addEventListener('click', async () => {
+      const next = !on;
+      sw.disabled = true; msg.className = 'msg'; msg.textContent = '저장하는 중…';
+      try {
+        await api('/rest/v1/site_settings?key=eq.sms_verify_enabled', { method: 'PATCH', headers: { Prefer: 'return=minimal' }, body: JSON.stringify({ value: next ? 'true' : 'false', updated_at: new Date().toISOString() }) });
+        on = next; paint(); msg.className = 'msg ok'; msg.textContent = on ? '문자 인증을 켰습니다.' : '문자 인증을 껐습니다.';
+      } catch (e) { msg.className = 'msg err'; msg.textContent = '저장하지 못했습니다: ' + e.message; }
+      sw.disabled = false;
+    });
+    settingsUi = card;
+    return card;
+  }
+
   function draw() {
     const count = (s) => rows.filter((r) => r.status === s).length;
     const confirmedPeople = rows.filter((r) => r.status === 'confirmed').reduce((s, r) => s + r.people, 0);
@@ -248,6 +298,7 @@
       const d = el('div'); d.append(el('span', null, k), el('b', null, v)); sum.append(d);
     });
     root.append(sum);
+    root.append(smsSwitchCard());
 
     const tabs = el('div', 'tabs'); tabs.setAttribute('role', 'group'); tabs.setAttribute('aria-label', '상태');
     [['paid', '예약 접수'], ['requested', '입금 대기'], ['confirmed', '예약 확정'], ['canceled', '취소'], ['all', '전체']].forEach(([key, label]) => {
