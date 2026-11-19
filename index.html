@@ -3,7 +3,32 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>봉불사 · 성지순례 봉찬회</title>
+<title>봉불사 · 봉찬회 | 성지순례 일정 · 법회 안내 · 예약</title>
+<meta name="description" content="봉불사와 성지순례 봉찬회 홈페이지입니다. 성지순례 일정과 법회 안내, 예약, 절 소개, 오시는 길(경기도 고양시 덕양구 내유길 299-2)을 확인하세요. 문의 02-387-8578">
+<meta name="keywords" content="봉불사, 봉찬회, 봉불사 봉찬회, 성지순례, 불교 성지순례, 법회, 고양시 절, 덕양구 내유길">
+<link rel="canonical" href="https://bongchanhoe.com/">
+<meta property="og:type" content="website">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:site_name" content="봉불사 · 봉찬회">
+<meta property="og:title" content="봉불사 · 봉찬회 | 성지순례 일정 · 법회 안내">
+<meta property="og:description" content="성지순례 일정과 법회 안내, 예약, 절 소개, 오시는 길을 확인하세요. 문의 02-387-8578">
+<meta property="og:url" content="https://bongchanhoe.com/">
+<meta property="og:image" content="https://bongchanhoe.com/images/hero.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<!-- 네이버 서치어드바이저 "HTML 태그" 소유 확인: 네이버에서 받은 meta 한 줄을 여기에 붙여 넣고 올리세요.
+     예) <meta name="naver-site-verification" content="받은코드"> -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "PlaceOfWorship",
+  "name": "봉불사",
+  "alternateName": ["봉찬회", "성지순례 봉찬회"],
+  "url": "https://bongchanhoe.com/",
+  "telephone": "+82-2-387-8578",
+  "image": "https://bongchanhoe.com/images/hero.jpg",
+  "address": { "@type": "PostalAddress", "streetAddress": "내유길 299-2", "addressLocality": "덕양구", "addressRegion": "경기도 고양시", "addressCountry": "KR" }
+}
+</script>
 <link rel="stylesheet" href="theme.css">
 <style>
   html, body { height: 100%; }
@@ -216,7 +241,7 @@
       else a.removeAttribute('aria-current');
     });
     $('title').textContent = page.label;
-    document.title = page.label + ' · 봉불사';
+    document.title = page.id === 'home' ? '봉불사 · 봉찬회 | 성지순례 일정 · 법회 안내 · 예약' : page.label + ' · 봉불사'; // 홈은 검색에 보이는 제목과 같게
 
     if (!page.file) { show('home'); return; }
 

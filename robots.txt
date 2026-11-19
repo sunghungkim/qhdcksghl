@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+Disallow: /menu.html
+Disallow: /sales.html
+Disallow: /reservations.html
+Disallow: /login.html
+Disallow: /reserve.html
+
+Sitemap: https://bongchanhoe.com/sitemap.xml
