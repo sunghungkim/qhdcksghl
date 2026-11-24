@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="173.2" viewBox="0 0 200 173.2">
+  <!-- 꽃살문: 옥빛 삼각 격자 + 꽃(노랑·분홍·남빛). 바탕은 투명(CSS에서 색을 깔아 씀) -->
+  <defs>
+    <symbol id="fl" overflow="visible" viewBox="-20 -20 40 40" width="40" height="40">
+      <g>
+        <circle cx="0" cy="-11" r="8.5"/><circle cx="9.5" cy="-5.5" r="8.5"/><circle cx="9.5" cy="5.5" r="8.5"/>
+        <circle cx="0" cy="11" r="8.5"/><circle cx="-9.5" cy="5.5" r="8.5"/><circle cx="-9.5" cy="-5.5" r="8.5"/>
+      </g>
+      <circle r="7.5" fill="#2fa79a" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.5"/>
+    </symbol>
+  </defs>
+  <g stroke="#2b9488" stroke-width="6" stroke-linecap="round" fill="none">
+    <path d="M0 0H200M0 86.6H200M0 173.2H200"/>
+    <path d="M0 0L50 86.6L0 173.2M100 0L50 86.6L100 173.2M100 0L150 86.6L100 173.2M200 0L150 86.6L200 173.2"/>
+  </g>
+  <g fill="#f0c040"><use href="#fl" x="-20" y="-20"/><use href="#fl" x="180" y="-20"/><use href="#fl" x="-20" y="153.2"/><use href="#fl" x="180" y="153.2"/><use href="#fl" x="130" y="66.6"/></g>
+  <g fill="#6b78e0"><use href="#fl" x="80" y="-20"/><use href="#fl" x="80" y="153.2"/></g>
+  <g fill="#ee8fa0"><use href="#fl" x="30" y="66.6"/></g>
+</svg>

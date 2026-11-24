@@ -2,20 +2,28 @@
 @import url("https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@600;700&display=swap");
 
 :root {
-  --bg: #fbf5ea;        /* 따뜻한 크림 */
-  --panel: #fffdf8;
-  --sand: #f2e7d3;      /* 연한 베이지 면 */
-  --text: #2a1d14;
-  --muted: #65523f;     /* 크림 위에서도 읽기 편한 진한 갈색 회색 */
-  --line: #e2d3ba;
-  --brand: #8c4a2f;     /* 황토빛 갈색 */
-  --brand-dark: #6e3720;
-  --gold: #c8862a;
+  /* 한국 전통 사찰 느낌: 단청의 옥빛(청록) + 꽃살문 무늬 (2026-11 개편) */
+  --bg: #f4f2e8;        /* 한지 같은 따뜻한 상아색 */
+  --panel: #fffef9;
+  --sand: #e1eee8;      /* 연한 옥빛 면 */
+  --text: #1b2a27;
+  --muted: #45605a;     /* 상아색 위에서도 읽기 편한 진한 청록 회색 */
+  --line: #c2d5cb;
+  --brand: #1d7a70;     /* 단청 옥빛 */
+  --brand-dark: #12524b;
+  --jade-deep: #0e3b36; /* 대웅전 기둥 같은 깊은 옥빛 */
+  --jade-mid: #2b9488;
+  --gold: #d9a431;      /* 단청 금빛 */
+  --dan-red: #c8362d;
+  --dan-blue: #3d5ab8;
   --ok-bg: #e2f0de; --ok-fg: #2a5f25;
-  --off-bg: #ece3d3; --off-fg: #5b4b3a;
+  --off-bg: #e4ebe5; --off-fg: #46584f;
   --red: #b3261e; --red-bg: #fde8e6;
   --serif: "Noto Serif KR", "Batang", "Nanum Myeongjo", serif;
   --sans: "Noto Sans KR", "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+  /* 꽃살문 무늬(images/kkotsal.svg)와 단청 띠 */
+  --kkotsal: url("images/kkotsal.svg");
+  --dancheong: repeating-linear-gradient(90deg, #1d7a70 0 26px, #f0c040 26px 34px, #c8362d 34px 46px, #f0c040 46px 54px, #3d5ab8 54px 66px, #f0c040 66px 74px);
 }
 
 * { box-sizing: border-box; }
@@ -250,3 +258,101 @@ header.page h1 { margin: 0; font-size: 1.7rem; }
 .privacy-sec b { color: var(--brand-dark); }
 .privacy-sec p { margin: 2px 0 0; line-height: 1.7; }
 .privacy-link { background: none; border: 0; padding: 0; font: inherit; color: var(--brand-dark); text-decoration: underline; cursor: pointer; }
+
+/* =====================================================================
+   전통 사찰 꾸밈 (2026-11): 단청 옥빛 · 꽃살문 무늬 · 금빛 선
+   색을 바꾸려면 맨 위 :root 의 --brand 등을, 무늬를 바꾸려면 images/kkotsal.svg 를 고치세요.
+   ===================================================================== */
+a { color: var(--brand-dark); }
+::selection { background: #bfe3da; }
+
+/* 버튼: 옥빛 + 금빛 안쪽 선 (단청 현판 느낌) */
+.btn {
+  background: linear-gradient(180deg, #27988b 0%, #176c63 100%);
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px #0f4a43, inset 0 0 0 2px #e6c25c;
+  text-shadow: 0 1px 0 rgba(0,0,0,.28);
+}
+.btn:hover { background: linear-gradient(180deg, #2fa89a 0%, #1c7a70 100%); }
+.btn:active { transform: translateY(1px); }
+.btn.ghost {
+  background: var(--panel); color: var(--brand-dark); text-shadow: none;
+  border: 0; box-shadow: 0 0 0 1.5px var(--brand), inset 0 0 0 2px #f1e3b0;
+  font-weight: 700;
+}
+.btn.ghost:hover { background: #eaf5f0; }
+.btn:disabled { box-shadow: 0 0 0 2px #7d9a94; }
+
+/* 카드: 위쪽에 단청 띠, 옥빛 테두리 */
+.item, .card, .box {
+  position: relative; overflow: hidden;
+  border: 1.5px solid #b4cdc2; border-radius: 14px;
+  padding-top: 32px;
+  box-shadow: 0 2px 0 rgba(18,82,75,.08);
+}
+.item::before, .card::before, .box::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: 9px;
+  background: var(--dancheong);
+  border-bottom: 2px solid #0f4a43;
+}
+.item.urgent { border-left: 7px solid var(--red); }
+@media (max-width: 720px) { .item, .card, .box { padding-top: 28px; } }
+form.box.edit { border-color: var(--gold); }
+
+/* 입력칸 */
+input, select, textarea { border: 1.5px solid #9fbfb3; }
+input:focus, select:focus, textarea:focus { outline: 3px solid #f0d27a; outline-offset: 1px; border-color: var(--brand); }
+
+/* 구역 제목 */
+.sec { color: var(--brand-dark); border-bottom: 2px solid var(--brand); position: relative; }
+.sec::after { content: ''; position: absolute; left: 0; bottom: -2px; width: 72px; height: 4px; background: var(--gold); }
+
+/* 배지·태그 */
+.admin-tag { background: #f6e6b8; color: #5d3f06; }
+
+/* 팝업: 옥빛 머리띠(꽃살문) */
+.popup-head {
+  background: linear-gradient(rgba(14,59,54,.93), rgba(14,59,54,.93)), var(--kkotsal);
+  background-size: auto, 130px;
+  border-bottom: 3px solid var(--gold);
+}
+.popup-title { color: #fff; }
+.popup-head .btn.ghost { background: var(--panel); }
+.popup-box { border: 2px solid var(--jade-deep); }
+.popup-foot { border-top: 3px solid var(--sand); }
+
+/* 관리 페이지 위쪽 띠·제목줄 */
+.bar {
+  background: linear-gradient(rgba(14,59,54,.94), rgba(14,59,54,.94)), var(--kkotsal);
+  background-size: auto, 120px;
+  color: #fff; border-bottom: 4px solid var(--gold);
+}
+.bar .name { color: #fff; }
+.bar .sub { color: #cfe5de; }
+.bar a, .bar button.link { color: #fff; }
+.bar a:hover, .bar button.link:hover { background: rgba(255,255,255,.16); }
+header.page { border-bottom: 0; position: relative; }
+header.page::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--dancheong); }
+
+/* 검색창·페이지 번호·슬라이드 */
+.searchbar { background: var(--sand); border: 1.5px solid #b4cdc2; }
+.pager .btn.current { background: var(--jade-deep); box-shadow: 0 0 0 2px #0f4a43, inset 0 0 0 2px #e6c25c; }
+.car-dot::before { background: #a9c7bc; }
+.car-dot[aria-current="true"]::before { background: var(--brand); }
+.carousel { border: 3px solid var(--jade-deep); box-shadow: 0 0 0 3px var(--gold); }
+
+/* 안내 칸들 */
+.flyers { border: 1.5px solid #b4cdc2; }
+.stop { border-color: #9fbfb3; }
+.stop.on { background: var(--jade-deep); border-color: var(--gold); }
+
+/* 바탕: 한지 색 위에 아주 연한 꽃살문 무늬 */
+body {
+  background-color: var(--bg);
+  background-image: linear-gradient(rgba(244,242,232,.955), rgba(244,242,232,.955)), var(--kkotsal);
+  background-size: auto, 240px auto;
+}
+
+/* 전단·검색 칸에도 같은 단청 띠 */
+.flyers, .searchbar { position: relative; overflow: hidden; padding-top: 30px; }
+.flyers::before, .searchbar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: var(--dancheong); border-bottom: 2px solid #0f4a43; }
