@@ -8,66 +8,136 @@
 <link rel="stylesheet" href="theme.css">
 <style>
   body { padding: 36px 40px 56px; }
-  .wrap { max-width: 920px; display: grid; gap: 20px; }
-  .two { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; align-items: start; }
-  .card { display: grid; gap: 14px; }
-  .card h2 { margin: 0; font-size: 1.4rem; color: var(--brand-dark); }
-  .card p.sub { margin: 0; color: var(--muted); font-size: .95rem; }
-  .card form { display: grid; gap: 14px; }
-  .card.admin { background: var(--sand); }
+  .wrap { max-width: 600px; margin: 0 auto; display: grid; gap: 18px; }
+  .note { margin: 0; padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
+
+  /* ---- 일주문: 지붕 · 공포 · 붉은 기둥 · 현판 · 돌계단. 안쪽에 로그인 칸이 놓입니다 ---- */
+  .gate { filter: drop-shadow(0 10px 14px rgba(20,50,45,.25)); }
+  .g-roof { display: block; width: 100%; height: auto; }
+  .g-body { display: grid; grid-template-columns: 34px 1fr 34px; margin-top: -2px; }
+  .pillar { position: relative; background: linear-gradient(90deg, #7d241d 0%, #c0443a 42%, #a3352a 70%, #7d241d 100%); }
+  .pillar::after { content: ''; position: absolute; left: -5px; right: -5px; bottom: 0; height: 18px; background: linear-gradient(#b9b3a6, #8f897c); border-radius: 3px 3px 0 0; }
+  .inside {
+    padding: 0 0 20px; min-width: 0;
+    background: radial-gradient(120% 70% at 50% 0%, #fffdf4 0%, #eaf2e4 55%, #d3e4d0 100%);
+    box-shadow: inset 8px 0 10px -8px rgba(0,0,0,.35), inset -8px 0 10px -8px rgba(0,0,0,.35);
+  }
+  .g-beam { height: 12px; background: linear-gradient(#a3352a, #7d241d); border-bottom: 2px solid #d9a521; }
+  .g-plaque {
+    width: 58%; margin: 14px auto 6px; padding: 6px 10px; text-align: center;
+    background: #1f1b17; border: 3px solid #c9982e; outline: 2px solid #1f1b17; outline-offset: -7px;
+    color: #f6edd0; font-family: "Nanum Myeongjo","Noto Serif KR",serif; font-size: 1.5rem; font-weight: 800; letter-spacing: .35em; text-indent: .35em;
+    box-shadow: 0 3px 0 rgba(0,0,0,.2);
+  }
+  .welcome { margin: 0 20px 14px; text-align: center; color: var(--brand-dark); font-size: .98rem; }
+  .gate-card { display: grid; gap: 14px; margin: 0 20px; padding: 18px; background: rgba(255,255,255,.88); border: 1px solid var(--line); border-radius: 14px; }
+  .gate-card h2 { margin: 0; font-size: 1.3rem; color: var(--brand-dark); }
+  .gate-card p.sub { margin: 0; color: var(--muted); font-size: .95rem; }
+  .gate-card form { display: grid; gap: 14px; }
+  .g-steps { height: 38px; margin: 0 -6px; background: linear-gradient(#d4cfc4 0 34%, #bdb7aa 34% 67%, #a7a194 67%); clip-path: polygon(4% 0, 96% 0, 100% 100%, 0 100%); }
   .tabs { display: flex; gap: 8px; }
   .tabbtn { flex: 1; min-height: 48px; padding: 8px 14px; font: inherit; font-weight: 700; border: 1.5px solid var(--line); border-radius: 12px; background: var(--panel); color: var(--text); cursor: pointer; }
   .tabbtn.on { background: var(--brand); border-color: var(--brand); color: #fff; }
-  .note { margin: 0; padding: 14px 18px; border-radius: 12px; background: var(--panel); border: 1px solid var(--line); }
-  @media (max-width: 760px) { body { padding: 24px 16px 40px; } }
+  .admin-link { text-align: center; margin: 0; }
+  .admin-link button { background: none; border: 0; padding: 8px 12px; font: inherit; font-size: .95rem; color: var(--muted); text-decoration: underline; cursor: pointer; }
+  .admin-card { display: grid; gap: 14px; padding: 22px; background: var(--sand); border: 1px solid var(--line); border-radius: 16px; }
+  .admin-card[hidden], #member-area[hidden] { display: none; }
+  .admin-card h2 { margin: 0; font-size: 1.4rem; color: var(--brand-dark); }
+  .admin-card form { display: grid; gap: 14px; }
+  @media (max-width: 760px) {
+    body { padding: 24px 12px 40px; }
+    .g-body { grid-template-columns: 22px 1fr 22px; }
+    .g-plaque { width: 70%; font-size: 1.25rem; }
+    .welcome, .gate-card { margin-left: 10px; margin-right: 10px; }
+    .gate-card { padding: 14px; }
+  }
 </style>
 </head>
 <body>
 <div class="wrap">
   <p class="note" id="status" hidden></p>
 
-  <div class="two">
-    <!-- 회원 로그인 / 회원가입 -->
-    <section class="card" aria-labelledby="h-member">
-      <h2 id="h-member">회원</h2>
-      <div class="tabs" role="tablist" aria-label="회원 메뉴">
-        <button type="button" role="tab" id="tab-login" aria-selected="true" class="tabbtn on">로그인</button>
-        <button type="button" role="tab" id="tab-signup" aria-selected="false" class="tabbtn">회원가입</button>
+  <!-- 회원: 일주문을 들어서듯 -->
+  <div id="member-area">
+    <div class="gate">
+      <svg class="g-roof" viewBox="0 0 600 142" role="img" aria-label="일주문 지붕" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <pattern id="tile" width="14" height="100" patternUnits="userSpaceOnUse"><rect width="14" height="100" fill="#3d4b54"/><rect width="7" height="100" fill="#4b5b65"/></pattern>
+          <pattern id="br" width="40" height="34" patternUnits="userSpaceOnUse">
+            <rect width="40" height="34" fill="#1f7a6e"/>
+            <rect x="3" y="3" width="34" height="9" rx="2" fill="#3a5bb8"/><rect x="8" y="14" width="24" height="7" rx="2" fill="#d9a521"/>
+            <rect x="12" y="23" width="16" height="7" rx="2" fill="#c0392b"/><circle cx="20" cy="7.5" r="2.4" fill="#f6edd0"/>
+          </pattern>
+        </defs>
+        <!-- 용마루 -->
+        <rect x="150" y="6" width="300" height="14" rx="4" fill="#2c373e"/>
+        <circle cx="148" cy="13" r="9" fill="#2c373e"/><circle cx="452" cy="13" r="9" fill="#2c373e"/>
+        <!-- 지붕 면 (처마 끝이 살짝 들린 모양) -->
+        <path d="M0 84 C42 84 72 70 100 42 L136 20 H464 L500 42 C528 70 558 84 600 84 L600 100 C560 102 524 98 494 88 H106 C76 98 40 102 0 100 Z" fill="url(#tile)"/>
+        <path d="M0 84 C42 84 72 70 100 42 L136 20 H464 L500 42 C528 70 558 84 600 84" fill="none" stroke="#2c373e" stroke-width="3"/>
+        <path d="M0 100 C40 102 76 98 106 88 H494 C524 98 560 102 600 100" fill="none" stroke="#e8e2cf" stroke-width="3"/>
+        <!-- 서까래 끝 둥근 막새 -->
+        <g fill="#e8e2cf" stroke="#9a2f26" stroke-width="2">
+          <circle cx="22" cy="98" r="5"/><circle cx="62" cy="99" r="5"/><circle cx="104" cy="95" r="5"/><circle cx="496" cy="95" r="5"/><circle cx="538" cy="99" r="5"/><circle cx="578" cy="98" r="5"/>
+        </g>
+        <!-- 단청 공포 띠 -->
+        <rect x="0" y="104" width="600" height="34" fill="url(#br)"/>
+        <rect x="0" y="102" width="600" height="3" fill="#d9a521"/><rect x="0" y="138" width="600" height="4" fill="#d9a521"/>
+      </svg>
+      <div class="g-body">
+        <div class="pillar" aria-hidden="true"></div>
+        <div class="inside">
+          <div class="g-beam" aria-hidden="true"></div>
+          <div class="g-plaque" aria-hidden="true">봉불사</div>
+          <p class="welcome">일주문을 들어서듯, 편안한 마음으로 들어오세요.</p>
+
+          <section class="gate-card" aria-labelledby="h-member">
+            <h2 id="h-member">회원</h2>
+            <div class="tabs" role="tablist" aria-label="회원 메뉴">
+              <button type="button" role="tab" id="tab-login" aria-selected="true" class="tabbtn on">로그인</button>
+              <button type="button" role="tab" id="tab-signup" aria-selected="false" class="tabbtn">회원가입</button>
+            </div>
+
+            <form id="member-form">
+              <p class="sub">처음이시면 위의 <b>회원가입</b>을 먼저 눌러 주세요.</p>
+              <label class="f">이름<input id="m-name" type="text" autocomplete="username" required maxlength="50"></label>
+              <label class="f">전화번호<input id="m-phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="20" placeholder="예: 010-1234-5678"></label>
+              <label class="f">비밀번호 (숫자 4~8자리)<input id="m-pw" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" placeholder="가입하신 비밀번호"></label>
+              <button class="btn" type="submit" id="m-go">회원 로그인</button>
+              <div class="msg" id="m-msg" role="status"></div>
+            </form>
+
+            <form id="signup-form" hidden>
+              <p class="sub">이름, 전화번호와 <b>간편 비밀번호(숫자 4~8자리)</b>를 정해 주세요. 한 번만 가입하시면 됩니다.</p>
+              <label class="f">이름<input id="s-name" type="text" autocomplete="name" required maxlength="50"></label>
+              <label class="f">전화번호<input id="s-phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="20" placeholder="예: 010-1234-5678"></label>
+              <label class="f">비밀번호 (숫자 4~8자리)<input id="s-pw" type="password" inputmode="numeric" autocomplete="new-password" required maxlength="8" pattern="[0-9]{4,8}" placeholder="숫자만 4~8자리"></label>
+              <label class="f">비밀번호 확인<input id="s-pw2" type="password" inputmode="numeric" autocomplete="new-password" required maxlength="8" pattern="[0-9]{4,8}" placeholder="한 번 더 입력"></label>
+              <div id="s-consent"></div>
+              <button class="btn" type="submit" id="s-go">가입하기</button>
+              <div class="msg" id="s-msg" role="status"></div>
+            </form>
+            <p class="hint" style="margin:0">입력하신 이름·전화번호는 예약 안내에만 사용합니다. <button type="button" class="privacy-link" id="privacy-open">개인정보 안내 보기</button><br>회원이 아니셔도 로그인 없이 일정을 볼 수 있습니다.</p>
+          </section>
+        </div>
+        <div class="pillar" aria-hidden="true"></div>
       </div>
-
-      <form id="member-form">
-        <p class="sub">처음이시면 위의 <b>회원가입</b>을 먼저 눌러 주세요.</p>
-        <label class="f">이름<input id="m-name" type="text" autocomplete="username" required maxlength="50"></label>
-        <label class="f">전화번호<input id="m-phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="20" placeholder="예: 010-1234-5678"></label>
-        <label class="f">비밀번호 (숫자 4~8자리)<input id="m-pw" type="password" inputmode="numeric" autocomplete="current-password" maxlength="8" placeholder="가입하신 비밀번호"></label>
-        <button class="btn" type="submit" id="m-go">회원 로그인</button>
-        <div class="msg" id="m-msg" role="status"></div>
-      </form>
-
-      <form id="signup-form" hidden>
-        <p class="sub">이름, 전화번호와 <b>간편 비밀번호(숫자 4~8자리)</b>를 정해 주세요. 한 번만 가입하시면 됩니다.</p>
-        <label class="f">이름<input id="s-name" type="text" autocomplete="name" required maxlength="50"></label>
-        <label class="f">전화번호<input id="s-phone" type="tel" inputmode="numeric" autocomplete="tel" required maxlength="20" placeholder="예: 010-1234-5678"></label>
-        <label class="f">비밀번호 (숫자 4~8자리)<input id="s-pw" type="password" inputmode="numeric" autocomplete="new-password" required maxlength="8" pattern="[0-9]{4,8}" placeholder="숫자만 4~8자리"></label>
-        <label class="f">비밀번호 확인<input id="s-pw2" type="password" inputmode="numeric" autocomplete="new-password" required maxlength="8" pattern="[0-9]{4,8}" placeholder="한 번 더 입력"></label>
-        <div id="s-consent"></div>
-        <button class="btn" type="submit" id="s-go">가입하기</button>
-        <div class="msg" id="s-msg" role="status"></div>
-      </form>
-      <p class="hint" style="margin:0">입력하신 이름·전화번호는 예약 안내에만 사용합니다. <button type="button" class="privacy-link" id="privacy-open">개인정보 안내 보기</button><br>회원이 아니셔도 로그인 없이 일정을 볼 수 있습니다.</p>
-    </section>
-
-    <!-- 관리자 로그인 -->
-    <section class="card admin" aria-labelledby="h-admin">
-      <h2 id="h-admin">관리자 로그인</h2>
-      <form id="admin-form">
-        <label class="f">이메일<input id="a-email" type="email" autocomplete="username" required></label>
-        <label class="f">비밀번호<input id="a-pw" type="password" autocomplete="current-password" required></label>
-        <button class="btn" type="submit" id="a-go">관리자 로그인</button>
-        <div class="msg" id="a-msg" role="status"></div>
-      </form>
-    </section>
+      <div class="g-steps" aria-hidden="true"></div>
+    </div>
+    <p class="admin-link"><button type="button" id="admin-open">관리자 로그인</button></p>
   </div>
+
+  <!-- 관리자 로그인: 위의 '관리자 로그인'을 눌렀을 때만 보임 -->
+  <section class="admin-card" id="admin-area" aria-labelledby="h-admin" hidden>
+    <h2 id="h-admin">관리자 로그인</h2>
+    <form id="admin-form">
+      <label class="f">이메일<input id="a-email" type="email" autocomplete="username" required></label>
+      <label class="f">비밀번호<input id="a-pw" type="password" autocomplete="current-password" required></label>
+      <button class="btn" type="submit" id="a-go">관리자 로그인</button>
+      <div class="msg" id="a-msg" role="status"></div>
+    </form>
+    <p class="admin-link"><button type="button" id="admin-close">← 회원 로그인으로 돌아가기</button></p>
+  </section>
 </div>
 
 <script src="privacy.js"></script>
@@ -108,6 +178,14 @@
     s.textContent = parts.join(' ');
   }
   showStatus();
+
+  /* ---------- 관리자 로그인 칸 열기 / 닫기 ---------- */
+  function showAdmin(on) {
+    $('member-area').hidden = on; $('admin-area').hidden = !on;
+    if (on) $('a-email').focus();
+  }
+  $('admin-open').addEventListener('click', () => showAdmin(true));
+  $('admin-close').addEventListener('click', () => showAdmin(false));
 
   /* ---------- 회원: 탭(로그인 / 회원가입) ---------- */
   const consent = buildConsent(); // 개인정보 수집·이용 동의 (필수)
