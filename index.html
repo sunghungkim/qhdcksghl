@@ -31,7 +31,6 @@
 <link rel="stylesheet" href="theme.css">
 <style>
   html, body { height: 100%; }
-  body::after { display: none; } /* 쉘은 가로 배치라 아래 띠를 끔 (각 페이지 안에서 보임) */
   body { display: flex; }
 
   /* ---------- 왼쪽 메뉴: 대웅전 기둥 같은 깊은 옥빛 + 꽃살문 ---------- */
@@ -69,8 +68,6 @@
   .main > header { padding: calc(var(--roof-h) + 20px) 40px 26px; border-bottom: 0; background: var(--panel); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 5; }
   .main > header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--dancheong); border-top: 2px solid #0f4a43; }
   .main > header h1 { margin: 0; font-size: 1.8rem; }
-  .main > header { background-image: url("images/crane.svg"); background-repeat: no-repeat; background-position: right 250px bottom 30px; background-size: 112px auto; }
-  .home-motif { max-width: 820px; height: 150px; margin: 8px 0 20px; background: url("images/sipjangsaeng.svg") no-repeat left center / contain; opacity: .95; }
   .who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
   .who .name { font-weight: 700; color: var(--brand-dark); }
   .stage { flex: 1; min-height: 0; position: relative; }
@@ -125,8 +122,7 @@
     .nav { flex-direction: row; gap: 4px; }
     .nav a { white-space: nowrap; padding: 10px 14px; border-left: 0; border-bottom: 4px solid transparent; border-radius: 10px; font-size: 1.05rem; }
     .nav a[aria-current="page"] { border-bottom-color: var(--gold); box-shadow: none; }
-    .main > header { padding: calc(var(--roof-h) + 12px) 16px 34px 44px; background-image: none; }
-    .home-motif { height: 100px; }
+    .main > header { padding: calc(var(--roof-h) + 12px) 16px 34px 44px; }
     .main > header h1 { font-size: 1.5rem; }
     .pad, .soon { padding: 24px 16px 40px; }
     .hero h2 { font-size: 1.7rem; }
@@ -166,7 +162,6 @@
             <a class="btn ghost" href="#temple:info">연락처 · 오시는 길</a>
           </div>
         </div>
-        <div class="home-motif" aria-hidden="true"></div>
         <h2 class="sec">바로가기</h2>
         <div class="cards" id="cards"></div>
       </div>
