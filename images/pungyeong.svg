@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="52" viewBox="0 0 28 52">
+  <!-- 처마 끝에 매달린 풍경(물고기) -->
+  <path d="M14 0V9" stroke="#8a5a10" stroke-width="2"/>
+  <path d="M5 20Q14 5 23 20L25 25H3Z" fill="#d9a431" stroke="#8a5a10" stroke-width="1.6"/>
+  <path d="M14 25V30" stroke="#8a5a10" stroke-width="1.6"/>
+  <ellipse cx="14" cy="38" rx="8.5" ry="4.8" fill="#2b9488" stroke="#12524b" stroke-width="1.4"/>
+  <polygon points="22,38 27.5,33.5 27.5,42.5" fill="#c8362d"/>
+  <circle cx="9.6" cy="36.8" r="1.2" fill="#fff"/>
+</svg>

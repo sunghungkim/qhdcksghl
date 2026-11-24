@@ -65,7 +65,7 @@
 
   /* ---------- 가운데 화면 ---------- */
   .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .main > header { padding: 22px 40px 26px; border-bottom: 0; background: var(--panel); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 5; }
+  .main > header { padding: calc(var(--roof-h) + 20px) 40px 26px; border-bottom: 0; background: var(--panel); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 5; }
   .main > header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--dancheong); border-top: 2px solid #0f4a43; }
   .main > header h1 { margin: 0; font-size: 1.8rem; }
   .who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
@@ -122,7 +122,7 @@
     .nav { flex-direction: row; gap: 4px; }
     .nav a { white-space: nowrap; padding: 10px 14px; border-left: 0; border-bottom: 4px solid transparent; border-radius: 10px; font-size: 1.05rem; }
     .nav a[aria-current="page"] { border-bottom-color: var(--gold); box-shadow: none; }
-    .main > header { padding: 14px 16px; }
+    .main > header { padding: calc(var(--roof-h) + 12px) 16px 18px 44px; }
     .main > header h1 { font-size: 1.5rem; }
     .pad, .soon { padding: 24px 16px 40px; }
     .hero h2 { font-size: 1.7rem; }

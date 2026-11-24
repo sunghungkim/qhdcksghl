@@ -356,3 +356,13 @@ body {
 /* 전단·검색 칸에도 같은 단청 띠 */
 .flyers, .searchbar { position: relative; overflow: hidden; padding-top: 30px; }
 .flyers::before, .searchbar::before { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 8px; background: var(--dancheong); border-bottom: 2px solid #0f4a43; }
+
+/* 각 화면 맨 위: 절 지붕 처마(기와 · 막새 · 단청 서까래)와 풍경 (images/roof.svg, images/pungyeong.svg) */
+header.page, .main > header { --roof-h: 64px; }
+header.page::before, .main > header::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 0; height: calc(var(--roof-h) + 52px); pointer-events: none; z-index: 0;
+  background: url("images/pungyeong.svg") no-repeat 8px calc(var(--roof-h) - 5px) / 22px auto, url("images/roof.svg") repeat-x 0 0 / auto var(--roof-h);
+  filter: drop-shadow(0 3px 2px rgba(15,63,58,.25));
+}
+header.page { padding-top: calc(var(--roof-h) + 22px); padding-left: 52px; }
+@media (max-width: 760px) { header.page, .main > header { --roof-h: 40px; } header.page { padding-top: calc(var(--roof-h) + 16px); padding-left: 40px; } }
