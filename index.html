@@ -64,8 +64,10 @@
   .side .call a { display: block; margin-top: 4px; font-size: 1.35rem; font-weight: 700; color: #ffe9a8; text-decoration: none; }
 
   /* ---------- 가운데 화면 ---------- */
-  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-  .main > header { padding: calc(var(--roof-h) + 20px) 40px 26px; border-bottom: 0; background: var(--panel); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: relative; z-index: 5; }
+  .main { flex: 1; min-width: 0; display: flex; flex-direction: column; position: relative; overflow: hidden; }
+  /* 제목 줄은 화면 맨 위에만 있고, 아래로 스크롤하면 내용과 함께 올라가 사라집니다 (스크립트의 syncHead).
+     내용은 제목 줄 높이(--hh)만큼 아래에서 시작합니다. */
+  .main > header { padding: calc(var(--roof-h) + 20px) 40px 26px; border-bottom: 0; background: var(--panel); display: flex; align-items: center; justify-content: space-between; gap: 12px; position: absolute; top: 0; left: 0; right: 0; z-index: 5; will-change: transform; }
   .main > header::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 8px; background: var(--dancheong); border-top: 2px solid #0f4a43; }
   .main > header h1 { margin: 0; font-size: 1.8rem; }
   .who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
@@ -77,7 +79,7 @@
   .view.on { display: block; }
   iframe.frame { width: 100%; height: 100%; border: 0; background: var(--bg); }
 
-  .pad { padding: 36px 40px 56px; overflow: auto; height: 100%; }
+  .pad { padding: calc(var(--hh, 0px) + 36px) 40px 56px; overflow: auto; height: 100%; }
   .hero { max-width: 820px; display: grid; gap: 22px; margin-bottom: 36px; }
   /* 문구: 두 줄을 한 덩어리로 가운데에 놓고, 둘째 줄은 안쪽으로 들여서 엇갈리게 */
   .hero .tag { margin: 0; color: var(--muted); font-size: 1.1rem; line-height: 1.7; justify-self: center; text-align: left; }
@@ -100,7 +102,7 @@
   .menu-card b { display: block; font-family: var(--serif); font-size: 1.3rem; margin-bottom: 6px; color: var(--brand-dark); }
   .menu-card span { color: var(--muted); }
 
-  .soon { height: 100%; display: grid; place-items: center; text-align: center; padding: 32px; }
+  .soon { height: 100%; display: grid; place-items: center; text-align: center; padding: calc(var(--hh, 0px) + 32px) 32px 32px; }
   .soon .badge { display: inline-block; font-size: 1rem; padding: 6px 16px; background: #f3e1bd; color: #6f4a0c; margin-bottom: 16px; }
   .soon h2 { margin: 0 0 8px; font-size: 1.9rem; }
   .soon p { margin: 0; color: var(--muted); }
@@ -126,7 +128,7 @@
     .nav a[aria-current="page"] { border-bottom-color: var(--gold); box-shadow: none; }
     .main > header { padding: calc(var(--roof-h) + 12px) 16px 34px 44px; }
     .main > header h1 { font-size: 1.5rem; }
-    .pad, .soon { padding: 24px 16px 40px; }
+    .pad, .soon { padding: calc(var(--hh, 0px) + 24px) 16px 40px; }
     .hero h2 { font-size: 1.7rem; }
   }
 </style>
@@ -231,6 +233,7 @@
 
   function show(name) {
     Object.entries(views).forEach(([k, el]) => el.classList.toggle('on', k === name));
+    if (typeof syncHead === 'function' && typeof headEl !== 'undefined') syncHead(); // 화면을 바꾸면 제목 줄을 다시 맨 위에
   }
 
   async function exists(file) {
@@ -271,6 +274,37 @@
       show('soon');
     }
   }
+
+  /* ---------- 제목 줄: 맨 위에서만 보이고, 스크롤을 내리면 올라가 사라짐 (왼쪽 메뉴 등은 그대로) ---------- */
+  const headEl = document.querySelector('.main > header');
+  let headH = 0;
+  function scroller() { // 지금 보이는 화면에서 실제로 스크롤되는 것
+    if (views.frame.classList.contains('on')) {
+      try { const d = $('frame').contentDocument; return d && (d.scrollingElement || d.documentElement); } catch (e) { return null; }
+    }
+    if (views.home.classList.contains('on')) return views.home.querySelector('.pad');
+    return null;
+  }
+  function syncHead() {
+    const s = scroller();
+    const y = s ? s.scrollTop : 0;
+    headEl.style.transform = 'translateY(' + (-Math.min(Math.max(y, 0), headH)) + 'px)';
+  }
+  function padFrame() { // 안쪽 페이지도 제목 줄 높이만큼 아래에서 시작
+    try { $('frame').contentDocument.documentElement.style.paddingTop = headH + 'px'; } catch (e) {}
+  }
+  function measureHead() {
+    headH = headEl.offsetHeight;
+    document.documentElement.style.setProperty('--hh', headH + 'px');
+    padFrame(); syncHead();
+  }
+  views.home.querySelector('.pad').addEventListener('scroll', syncHead, { passive: true });
+  $('frame').addEventListener('load', () => {
+    try { $('frame').contentWindow.addEventListener('scroll', syncHead, { passive: true }); } catch (e) {}
+    padFrame(); syncHead();
+  });
+  if (window.ResizeObserver) new ResizeObserver(measureHead).observe(headEl); else window.addEventListener('resize', measureHead);
+  measureHead();
 
   window.addEventListener('hashchange', open);
   open();
