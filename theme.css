@@ -366,3 +366,26 @@ header.page::before, .main > header::before {
 }
 header.page { padding-top: calc(var(--roof-h) + 22px); padding-left: 52px; }
 @media (max-width: 760px) { header.page, .main > header { --roof-h: 40px; } header.page { padding-top: calc(var(--roof-h) + 16px); padding-left: 40px; } }
+
+/* =====================================================================
+   전통 무늬 (십장생 · 단청 머리초 · 원형 꽃): images/dancheong-band.svg, rosette.svg, crane.svg, sipjangsaeng.svg
+   ===================================================================== */
+/* 제목줄 아래 띠를 단청 머리초 무늬로 */
+header.page::after, .main > header::after {
+  height: 26px; background: url("images/dancheong-band.svg") repeat-x 0 0 / auto 26px; border-top: 0;
+}
+header.page { padding-bottom: 38px; }
+
+/* 카드 오른쪽 위 둥근 꽃 장식 */
+.item::after {
+  content: ''; position: absolute; right: 14px; top: 20px; width: 36px; height: 36px; pointer-events: none;
+  background: url("images/rosette.svg") no-repeat center / contain; opacity: .9;
+}
+.item .top { padding-right: 44px; }
+
+/* 페이지 맨 아래: 십장생 그림 띠(학 · 거북 · 사슴) */
+body::after {
+  content: ''; display: block; max-width: 720px; height: 130px; margin: 28px auto 0;
+  background: url("images/sipjangsaeng.svg") no-repeat center / contain; opacity: .92; pointer-events: none;
+}
+@media (max-width: 760px) { body::after { height: 90px; margin-top: 16px; } .item::after { width: 28px; height: 28px; top: 18px; right: 10px; } .item .top { padding-right: 34px; } }

@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 48 48">
+  <!-- 원형 꽃 문양(꽃살문 둥근 장식) -->
+  <circle cx="24" cy="24" r="22" fill="#f4efe2" stroke="#7d8179" stroke-width="2.4"/>
+  <g fill="#ee7fa6" stroke="#b7406f" stroke-width="1">
+    <ellipse cx="24" cy="12" rx="4.6" ry="7"/><ellipse cx="24" cy="36" rx="4.6" ry="7"/>
+    <ellipse cx="12" cy="24" rx="7" ry="4.6"/><ellipse cx="36" cy="24" rx="7" ry="4.6"/>
+    <ellipse cx="15.5" cy="15.5" rx="4.6" ry="6.6" transform="rotate(-45 15.5 15.5)"/><ellipse cx="32.5" cy="15.5" rx="4.6" ry="6.6" transform="rotate(45 32.5 15.5)"/>
+    <ellipse cx="15.5" cy="32.5" rx="4.6" ry="6.6" transform="rotate(45 15.5 32.5)"/><ellipse cx="32.5" cy="32.5" rx="4.6" ry="6.6" transform="rotate(-45 32.5 32.5)"/>
+  </g>
+  <circle cx="24" cy="24" r="6.4" fill="#f0c040" stroke="#a8761c" stroke-width="1.6"/><circle cx="24" cy="24" r="2.4" fill="#fff"/>
+</svg>
