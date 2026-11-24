@@ -70,6 +70,8 @@
   .main > header h1 { margin: 0; font-size: 1.8rem; }
   .who { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
   .who .name { font-weight: 700; color: var(--brand-dark); }
+  /* 로그아웃 버튼은 다른 버튼의 절반 크기 (PC·모바일 공통) */
+  .who .btn.logout { min-height: 22px; padding: 2px 9px; font-size: .78rem; border-radius: 7px; box-shadow: 0 0 0 1.5px var(--brand), inset 0 0 0 1px #f1e3b0; }
   .stage { flex: 1; min-height: 0; position: relative; }
   .view { display: none; height: 100%; }
   .view.on { display: block; }
@@ -311,7 +313,7 @@
       who.append(a1, a3, a4, a2);
     }
     if (m || admin) {
-      const out = mk('button', 'btn ghost small', '로그아웃'); out.type = 'button';
+      const out = mk('button', 'btn ghost small logout', '로그아웃'); out.type = 'button';
       out.addEventListener('click', () => {
         try { sessionStorage.removeItem('member'); sessionStorage.removeItem('admin_token'); } catch (e) {}
         renderWho();
